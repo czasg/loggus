@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 import sys
 import json
@@ -109,7 +109,7 @@ class Logger:
     def TextFormat(self, level: int, fields: dict):
         _time = fields.pop("time", datetime.now())
         _level = fields.pop("level", "undefined")
-        _msg = fields.pop("msg", "empty")
+        _msg = f"""{fields.pop("msg", "empty")}"""
         if " " in _msg:
             _msg = f"\"{_msg}\""
         out = f"time=\"{_time}\" level={_level} msg={_msg}"
