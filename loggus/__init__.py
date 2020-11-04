@@ -1,7 +1,8 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
+import re
 import sys
 import json
 import logging
@@ -13,6 +14,7 @@ from copy import deepcopy
 from datetime import datetime
 
 EntryQueue = Queue(1024)
+regex = re.compile(u"[\u4e00-\u9fa5\s]")
 TextFormatter: object = object()
 JsonFormatter: object = object()
 DEBUG: int = logging.DEBUG
@@ -110,7 +112,7 @@ class Logger:
         _time = fields.pop("time", datetime.now())
         _level = fields.pop("level", "undefined")
         _msg = f"""{fields.pop("msg", "empty")}"""
-        if " " in _msg:
+        if regex.search(_msg):
             _msg = f"\"{_msg}\""
         out = f"time=\"{_time}\" level={_level} msg={_msg}"
         error = fields.pop("error", None)
