@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
 import re
 import sys
@@ -121,7 +121,7 @@ class Logger:
         for key, value in fields.items():
             out += " "
             if isinstance(value, str):
-                out += f"{key}=\"{value}\"" if " " in value else f"{key}={value}"
+                out += f"{key}=\"{value}\"" if regex.search(value) else f"{key}={value}"
             elif isinstance(value, Exception):
                 out += f"{key}=\"[####@ {value} @####]\""
             elif isinstance(value, datetime):
