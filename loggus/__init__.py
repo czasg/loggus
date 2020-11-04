@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 import re
 import sys
@@ -14,7 +14,7 @@ from copy import deepcopy
 from datetime import datetime
 
 EntryQueue = Queue(1024)
-regex = re.compile(u"[\u4e00-\u9fa5\s]")
+regex = re.compile("[^a-zA-Z0-9]")
 TextFormatter: object = object()
 JsonFormatter: object = object()
 DEBUG: int = logging.DEBUG
