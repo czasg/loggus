@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import sys
 import json
@@ -236,7 +236,10 @@ class Entry:
         self.fields.update({"error": str(exception)})
 
     def log(self, level: int, msg: str) -> None:
-        fields = deepcopy(self.fields)
+        try:
+            fields = deepcopy(self.fields)
+        except:
+            fields = {f"{key}": f"{value}" for key, value in self.fields.items()}
         fields.update({
             "time": datetime.now(),
             "level": LEVEL_MAP.get(level, "undefined"),
