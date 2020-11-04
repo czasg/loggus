@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 import sys
 import json
@@ -37,12 +37,40 @@ class PrettyEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+class IHookMetaClass(type):
+
+    def __new__(cls, name: str, bases: tuple, attrs: dict):
+        if bases:
+            if IHook not in bases:
+                raise Exception(f"please ensure `{name}` implemented the interface of `logor.interface.IHook`")
+            if "GetLevels" not in attrs:
+                raise Exception(f"please ensure `{name}` implemented the function of `GetLevels`")
+            if "ProcessMsg" not in attrs:
+                raise Exception(f"please ensure `{name}` implemented the function of `ProcessMsg`")
+        return type.__new__(cls, name, bases, attrs)
+
+
+class IHook(metaclass=IHookMetaClass):
+
+    def GetLevels(self) -> list:
+        raise NotImplementedError
+
+    def ProcessMsg(self, msg: str) -> None:
+        raise NotImplementedError
+
+
 class Logger:
 
     def __init__(self, out: Any = None, formatter: Any = None, level: int = None):
         self.out = out or sys.stdout
         self.formatter = formatter or TextFormatter
         self.level = level or INFO
+        self.hooks = {
+            DEBUG: [],
+            INFO: [],
+            WARNING: [],
+            ERROR: [],
+        }
 
     def NewEntry(self):
         try:
@@ -62,30 +90,32 @@ class Logger:
     def IsLevelEnabled(self, level: int) -> bool:
         return level >= self.level
 
-    def Format(self, fields: dict) -> None:
+    def Format(self, level: int, fields: dict) -> None:
         if self.formatter is JsonFormatter:
-            self.JsonFormat(fields)
+            self.JsonFormat(level, fields)
         else:
-            self.TextFormat(fields)
+            self.TextFormat(level, fields)
 
-    def JsonFormat(self, fields: dict):
+    def JsonFormat(self, level: int, fields: dict):
         try:
             out = json.dumps(fields, ensure_ascii=False, cls=PrettyEncoder)
         except:
             print(traceback.format_exc())
         else:
-            self.Write(f"{out}\r\n")
+            out = f"{out}\n"
+            self.Write(out)
+            self.FireHooks(level, out)
 
-    def TextFormat(self, fields: dict):
-        time = fields.pop("time", datetime.now())
-        level = fields.pop("level", "undefined")
-        msg = fields.pop("msg", "empty")
-        if " " in msg:
-            msg = f"\"{msg}\""
-        out = f"time=\"{time}\" level={level} msg={msg}"
+    def TextFormat(self, level: int, fields: dict):
+        _time = fields.pop("time", datetime.now())
+        _level = fields.pop("level", "undefined")
+        _msg = fields.pop("msg", "empty")
+        if " " in _msg:
+            _msg = f"\"{_msg}\""
+        out = f"time=\"{_time}\" level={_level} msg={_msg}"
         error = fields.pop("error", None)
         if error is not None:
-            out = f"{out} error=\"[####@\r\n{error}\r\n@####]\" "
+            out = f"{out} error=\"[####@\n{error}\n@####]\" "
         for key, value in fields.items():
             out += " "
             if isinstance(value, str):
@@ -96,14 +126,26 @@ class Logger:
                 out += f"{key}=\"{value}\""
             else:
                 out += f"{key}={value}"
-        self.Write(f"{out}\r\n")
+        out = f"{out}\n"
+        self.Write(out)
+        self.FireHooks(level, out)
 
     def Write(self, out: str) -> None:
         self.out.write(out)
         self.out.flush()
 
-    def AddHook(self):
-        pass
+    def AddHook(self, hook: object):
+        if isinstance(hook, IHook):
+            levels = hook.GetLevels()
+            for level in levels:
+                if level in self.hooks:
+                    self.hooks[level].append(hook)
+        else:
+            self.warning("invalid hook")
+
+    def FireHooks(self, level: int, msg: str):
+        for hook in self.hooks.get(level, []):  # type: IHook
+            hook.ProcessMsg(msg)
 
     def SetFormatter(self, formatter: TextFormatter or JsonFormatter):
         if formatter in (TextFormatter, JsonFormatter):
@@ -173,6 +215,10 @@ def SetFormatter(formatter: TextFormatter or JsonFormatter):
     _logger.SetFormatter(formatter)
 
 
+def AddHook(hook: object):
+    _logger.AddHook(hook)
+
+
 class Entry:
 
     def __init__(self, logger: Logger):
@@ -196,13 +242,13 @@ class Entry:
             "level": LEVEL_MAP.get(level, "undefined"),
             "msg": msg,
         })
-        self.logger.Format(fields)
+        self.logger.Format(level, fields)
 
     def Log(self, level: int, msg: str):
         if self.logger.IsLevelEnabled(level):
             self.log(level, msg)
             if level >= PANIC:
-                sys.exit()
+                sys.exit(PANIC)
 
     def debug(self, msg: str) -> None:
         self.Log(DEBUG, msg)
@@ -320,4 +366,4 @@ def execute():
     })
     for index, argv in enumerate(args):
         entry = entry.WithField(f"argv{index + 1}", argv)
-    entry.Info("welcome to loggus")
+    entry.Info("hello loggus")
