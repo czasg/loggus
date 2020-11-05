@@ -11,6 +11,7 @@ class FileBeat(loggus.IHook):
 
     def ProcessMsg(self, msg):
         self.o.write(msg)
+        self.o.flush()
 
     def __del__(self):
         self.o.close()

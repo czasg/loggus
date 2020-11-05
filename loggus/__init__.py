@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 import re
 import sys
@@ -13,6 +13,9 @@ from queue import Queue
 from copy import deepcopy
 from datetime import datetime
 
+# Entry Queue, when Entry-Object trigger `__del__`, it shouldn't release, rather push the object into queue,
+# so next NewEntry will try to get it first, if not, then new one.
+# ps: not try it
 EntryQueue = Queue(1024)
 regex = re.compile("[^a-zA-Z0-9]")
 TextFormatter: object = object()
@@ -31,6 +34,8 @@ LEVEL_MAP = {
 }
 
 
+# json encoder:
+#   1、`datetime`
 class PrettyEncoder(json.JSONEncoder):
 
     def default(self, obj: Any) -> Any:
@@ -39,12 +44,13 @@ class PrettyEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+# interface metaclass, force obj to implement the `property`.
 class IHookMetaClass(type):
 
     def __new__(cls, name: str, bases: tuple, attrs: dict):
         if bases:
             if IHook not in bases:
-                raise Exception(f"please ensure `{name}` implemented the interface of `logor.interface.IHook`")
+                raise Exception(f"please ensure `{name}` implemented the interface of `loggus.IHook`")
             if "GetLevels" not in attrs:
                 raise Exception(f"please ensure `{name}` implemented the function of `GetLevels`")
             if "ProcessMsg" not in attrs:
@@ -61,6 +67,9 @@ class IHook(metaclass=IHookMetaClass):
         raise NotImplementedError
 
 
+# this is a storage, to store formatter & level & hooks
+# there will be default one instance: `_logger`, so each default entry will bind this and use it's rules.
+# if you want to split the rule of logger, you can new one also.
 class Logger:
 
     def __init__(self, out: Any = None, formatter: Any = None, level: int = None):
@@ -75,13 +84,7 @@ class Logger:
         }
 
     def NewEntry(self):
-        try:
-            entry = EntryQueue.get_nowait()
-        except:
-            return Entry(self)
-        else:
-            entry.logger = self
-            return entry
+        return Entry(self)
 
     def SetLevel(self, level: int):
         if level in LEVEL_MAP:
@@ -153,51 +156,59 @@ class Logger:
         if formatter in (TextFormatter, JsonFormatter):
             self.formatter = formatter
 
-    def WithField(self, key: str, value: Any):
+    def withField(self, key: Any, value: Any):
+        entry = self.NewEntry()
+        return entry.withField(key, value)
+
+    def WithField(self, key: Any, value: Any):
         entry = self.NewEntry()
         return entry.WithField(key, value)
+
+    def withFields(self, fields: dict):
+        entry = self.NewEntry()
+        return entry.withFields(fields)
 
     def WithFields(self, fields: dict):
         entry = self.NewEntry()
         return entry.WithFields(fields)
 
-    def debug(self, msg: str) -> None:
+    def debug(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.debug(msg)
 
-    def Debug(self, msg: str) -> None:
+    def Debug(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.Debug(msg)
 
-    def info(self, msg: str) -> None:
+    def info(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.info(msg)
 
-    def Info(self, msg: str) -> None:
+    def Info(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.Info(msg)
 
-    def warning(self, msg: str) -> None:
+    def warning(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.warning(msg)
 
-    def Warning(self, msg: str) -> None:
+    def Warning(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.Warning(msg)
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.error(msg)
 
-    def Error(self, msg: str) -> None:
+    def Error(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.Error(msg)
 
-    def panic(self, msg: str) -> None:
+    def panic(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.panic(msg)
 
-    def Panic(self, msg: str) -> None:
+    def Panic(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.Panic(msg)
 
@@ -221,14 +232,24 @@ def AddHook(hook: object):
     _logger.AddHook(hook)
 
 
+# An entry is the final or intermediate logging entry. It contains all the fields,
+# It's finally logged when debug/info/warning/error/panic is called on it.
+# these objects can be reused and passed around as much as you wish to avoid field duplication.
 class Entry:
 
     def __init__(self, logger: Logger):
         self.logger = logger
         self.fields = dict()
 
-    def WithField(self, key: str, value: Any):
+    def withField(self, key: Any, value: Any):
+        return self.withFields({key: value})
+
+    def WithField(self, key: Any, value: Any):
         return self.WithFields({key: value})
+
+    def withFields(self, fields: dict):
+        self.fields.update(fields)
+        return self
 
     def WithFields(self, fields: dict):
         self.fields.update(fields)
@@ -237,7 +258,7 @@ class Entry:
     def WithException(self, exception: Exception) -> None:
         self.fields.update({"error": str(exception)})
 
-    def log(self, level: int, msg: str) -> None:
+    def log(self, level: int, msg: Any) -> None:
         try:
             fields = deepcopy(self.fields)
         except:
@@ -249,61 +270,48 @@ class Entry:
         })
         self.logger.Format(level, fields)
 
-    def Log(self, level: int, msg: str):
+    def Log(self, level: int, msg: Any):
         if self.logger.IsLevelEnabled(level):
             self.log(level, msg)
             if level >= PANIC:
                 sys.exit(PANIC)
 
-    def debug(self, msg: str) -> None:
+    def debug(self, msg: Any) -> None:
         self.Log(DEBUG, msg)
 
-    def Debug(self, msg: str) -> None:
+    def Debug(self, msg: Any) -> None:
         self.debug(msg)
 
-    def info(self, msg: str) -> None:
+    def info(self, msg: Any) -> None:
         self.Log(INFO, msg)
 
-    def Info(self, msg: str) -> None:
+    def Info(self, msg: Any) -> None:
         self.info(msg)
 
-    def warning(self, msg: str) -> None:
+    def warning(self, msg: Any) -> None:
         self.Log(WARNING, msg)
 
-    def Warning(self, msg: str) -> None:
+    def Warning(self, msg: Any) -> None:
         self.warning(msg)
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: Any) -> None:
         self.Log(ERROR, msg)
 
-    def Error(self, msg: str) -> None:
+    def Error(self, msg: Any) -> None:
         self.error(msg)
 
-    def panic(self, msg: str) -> None:
+    def panic(self, msg: Any) -> None:
         self.Log(PANIC, msg)
 
-    def Panic(self, msg: str) -> None:
+    def Panic(self, msg: Any) -> None:
         self.panic(msg)
-
-    def __del__(self):
-        self.fields = dict()
-        try:
-            EntryQueue.put_nowait(self)
-        except:
-            del self
 
 
 def NewEntry():
-    try:
-        entry = EntryQueue.get_nowait()
-    except:
-        return Entry(_logger)
-    else:
-        entry.logger = _logger
-        return entry
+    return Entry(_logger)
 
 
-def WithField(key: str, value: Any) -> Entry:
+def WithField(key: Any, value: Any) -> Entry:
     entry = NewEntry()
     return entry.WithField(key, value)
 
@@ -313,52 +321,52 @@ def WithFields(fields: dict) -> Entry:
     return entry.WithFields(fields)
 
 
-def debug(msg: str) -> None:
+def debug(msg: Any) -> None:
     entry = NewEntry()
     entry.debug(msg)
 
 
-def info(msg: str) -> None:
+def info(msg: Any) -> None:
     entry = NewEntry()
     entry.info(msg)
 
 
-def warning(msg: str) -> None:
+def warning(msg: Any) -> None:
     entry = NewEntry()
     entry.warning(msg)
 
 
-def error(msg: str) -> None:
+def error(msg: Any) -> None:
     entry = NewEntry()
     entry.error(msg)
 
 
-def panic(msg: str) -> None:
+def panic(msg: Any) -> None:
     entry = NewEntry()
     entry.panic(msg)
 
 
-def Debug(msg: str) -> None:
+def Debug(msg: Any) -> None:
     entry = NewEntry()
     entry.Debug(msg)
 
 
-def Info(msg: str) -> None:
+def Info(msg: Any) -> None:
     entry = NewEntry()
     entry.Info(msg)
 
 
-def Warning(msg: str) -> None:
+def Warning(msg: Any) -> None:
     entry = NewEntry()
     entry.Warning(msg)
 
 
-def Error(msg: str) -> None:
+def Error(msg: Any) -> None:
     entry = NewEntry()
     entry.Error(msg)
 
 
-def Panic(msg: str) -> None:
+def Panic(msg: Any) -> None:
     entry = NewEntry()
     entry.Panic(msg)
 
