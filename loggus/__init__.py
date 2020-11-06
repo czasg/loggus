@@ -1,22 +1,16 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.8"
+__version__ = "0.0.9"
 
 import re
 import sys
 import json
 import logging
-import traceback
 
 from typing import Any
-from queue import Queue
 from copy import deepcopy
 from datetime import datetime
 
-# Entry Queue, when Entry-Object trigger `__del__`, it shouldn't release, rather push the object into queue,
-# so next NewEntry will try to get it first, if not, then new one.
-# ps: not try it
-EntryQueue = Queue(1024)
 regex = re.compile("[^a-zA-Z0-9]")
 TextFormatter: object = object()
 JsonFormatter: object = object()
@@ -42,6 +36,13 @@ class PrettyEncoder(json.JSONEncoder):
         if isinstance(obj, datetime):
             return str(obj)
         return super().default(obj)
+
+
+# json encoder: forced every obj to str.
+class ForcedEncoder(json.JSONEncoder):
+
+    def default(self, obj: Any) -> str:
+        return f"{obj}"
 
 
 # interface metaclass, force obj to implement the `property`.
@@ -105,11 +106,10 @@ class Logger:
         try:
             out = json.dumps(fields, ensure_ascii=False, cls=PrettyEncoder)
         except:
-            print(traceback.format_exc())
-        else:
-            out = f"{out}\n"
-            self.Write(out)
-            self.FireHooks(level, out)
+            out = json.dumps(fields, ensure_ascii=False, cls=ForcedEncoder)
+        out = f"{out}\n"
+        self.Write(out)
+        self.FireHooks(level, out)
 
     def TextFormat(self, level: int, fields: dict):
         _time = fields.pop("time", datetime.now())
@@ -172,6 +172,12 @@ class Logger:
         entry = self.NewEntry()
         return entry.WithFields(fields)
 
+    def withException(self, exception: Exception):
+        return self.withField("error", str(exception))
+
+    def WithException(self, exception: Exception):
+        return self.WithField("error", str(exception))
+
     def debug(self, msg: Any) -> None:
         entry = self.NewEntry()
         entry.debug(msg)
@@ -220,6 +226,9 @@ def NewLogger(out: Any = None, formatter: Any = None, level: int = None) -> Logg
 _logger = NewLogger()
 
 
+# default func for Logger.
+
+
 def SetLevel(level: int) -> None:
     _logger.SetLevel(level)
 
@@ -248,15 +257,23 @@ class Entry:
         return self.WithFields({key: value})
 
     def withFields(self, fields: dict):
-        self.fields.update(fields)
-        return self
+        try:
+            newFields = deepcopy(self.fields)
+        except:
+            newFields = {f"{key}": f"{value}" for key, value in self.fields.items()}
+        newFields.update(fields)
+        entry = NewEntry(self.logger)
+        entry.fields = newFields
+        return entry
 
     def WithFields(self, fields: dict):
-        self.fields.update(fields)
-        return self
+        return self.withFields(fields)
 
-    def WithException(self, exception: Exception) -> None:
-        self.fields.update({"error": str(exception)})
+    def withException(self, exception: Exception):
+        return self.withField("error", str(exception))
+
+    def WithException(self, exception: Exception):
+        return self.WithField("error", str(exception))
 
     def log(self, level: int, msg: Any) -> None:
         try:
@@ -307,18 +324,23 @@ class Entry:
         self.panic(msg)
 
 
-def NewEntry():
-    return Entry(_logger)
+def NewEntry(logger: Logger = None) -> Entry:
+    return Entry(logger or _logger)
+
+
+# The default entry should be guaranteed not to be contaminated.
+_entry = NewEntry(_logger)
+
+
+# default func for entry.
 
 
 def WithField(key: Any, value: Any) -> Entry:
-    entry = NewEntry()
-    return entry.WithField(key, value)
+    return _entry.WithField(key, value)
 
 
 def WithFields(fields: dict) -> Entry:
-    entry = NewEntry()
-    return entry.WithFields(fields)
+    return _entry.WithFields(fields)
 
 
 def debug(msg: Any) -> None:
@@ -377,6 +399,10 @@ def execute():
         "author": __author__,
         "version": __version__,
     })
-    for index, argv in enumerate(args):
-        entry = entry.WithField(f"argv{index + 1}", argv)
-    entry.Info("hello loggus")
+    if args:
+        if args[0] in LEVEL_MAP.values():
+            getattr(entry, args[0])(args[1:])
+        else:
+            for index, argv in enumerate(args):
+                entry = entry.WithField(f"argv{index + 1}", argv)
+            entry.Info("hello loggus")
