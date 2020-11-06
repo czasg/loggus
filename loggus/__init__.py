@@ -287,10 +287,10 @@ class Entry:
         return self.WithField("exception", str(exception))
 
     def withTraceback(self):
-        return self.withField("traceback", traceback.format_exc())
+        return self.withField("traceback", traceback.format_exc().strip())
 
     def WithTraceback(self):
-        return self.WithField("traceback", traceback.format_exc())
+        return self.WithField("traceback", traceback.format_exc().strip())
 
     def log(self, level: int, msg: Any) -> None:
         try:
