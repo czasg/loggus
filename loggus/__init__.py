@@ -351,6 +351,14 @@ def WithFields(fields: dict) -> Entry:
     return _entry.WithFields(fields)
 
 
+def withException(exception: Exception) -> Entry:
+    return _entry.withException(exception)
+
+
+def WithException(exception: Exception) -> Entry:
+    return _entry.WithException(exception)
+
+
 def debug(msg: Any) -> None:
     entry = NewEntry()
     entry.debug(msg)
