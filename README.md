@@ -1,13 +1,13 @@
 ## loggus
 
-This is a log library, you can output json, and pay attention to each fields easy.  
+This is a log library, you can output json, and pay attention to each fields easy.
 
 ### Json && Fields
 Here is the passage: 
 ```text
 "hello, my name is cza, 18 years old, i graduated from WUST."
 ```
-so, we can use loggrus by this:
+so, we can use loggus by this:
 ```python
 import loggus
 
@@ -47,13 +47,14 @@ import loggus
 class FileBeat(loggus.IHook):
 
     def __init__(self):
-        self.o = open("cza.log", "a+", encoding="utf-8")
+        self.o = open("loggus.log", "a+", encoding="utf-8")
 
-    def GetLevels(self):
+    def GetLevels(self):  # define trigger level of this hook, like debug/info/warning/error
         return [loggus.INFO, loggus.ERROR]
 
-    def ProcessMsg(self, msg):
+    def ProcessMsg(self, msg):  # you can write msg into file or msg-queue
         self.o.write(msg)
+        self.o.flush()
 
     def __del__(self):
         self.o.close()
