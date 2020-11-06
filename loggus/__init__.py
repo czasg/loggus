@@ -6,6 +6,7 @@ import re
 import sys
 import json
 import logging
+import traceback
 
 from typing import Any
 from copy import deepcopy
@@ -173,10 +174,20 @@ class Logger:
         return entry.WithFields(fields)
 
     def withException(self, exception: Exception):
-        return self.withField("error", str(exception))
+        entry = self.NewEntry()
+        return entry.withException(exception)
 
     def WithException(self, exception: Exception):
-        return self.WithField("error", str(exception))
+        entry = self.NewEntry()
+        return entry.WithException(exception)
+
+    def withTraceback(self):
+        entry = self.NewEntry()
+        return entry.withTraceback()
+
+    def WithTraceback(self):
+        entry = self.NewEntry()
+        return entry.WithTraceback()
 
     def debug(self, msg: Any) -> None:
         entry = self.NewEntry()
@@ -270,10 +281,16 @@ class Entry:
         return self.withFields(fields)
 
     def withException(self, exception: Exception):
-        return self.withField("error", str(exception))
+        return self.withField("exception", str(exception))
 
     def WithException(self, exception: Exception):
-        return self.WithField("error", str(exception))
+        return self.WithField("exception", str(exception))
+
+    def withTraceback(self):
+        return self.withField("traceback", traceback.format_exc())
+
+    def WithTraceback(self):
+        return self.WithField("traceback", traceback.format_exc())
 
     def log(self, level: int, msg: Any) -> None:
         try:
@@ -357,6 +374,14 @@ def withException(exception: Exception) -> Entry:
 
 def WithException(exception: Exception) -> Entry:
     return _entry.WithException(exception)
+
+
+def withTraceback():
+    return _entry.withTraceback()
+
+
+def WithTraceback():
+    return _entry.WithTraceback()
 
 
 def debug(msg: Any) -> None:
