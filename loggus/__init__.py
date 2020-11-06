@@ -335,6 +335,14 @@ _entry = NewEntry(_logger)
 # default func for entry.
 
 
+def withField(key: Any, value: Any) -> Entry:
+    return _entry.withField(key, value)
+
+
+def withFields(fields: dict) -> Entry:
+    return _entry.withFields(fields)
+
+
 def WithField(key: Any, value: Any) -> Entry:
     return _entry.WithField(key, value)
 
