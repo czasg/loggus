@@ -22,9 +22,9 @@ ERROR: int = logging.ERROR
 PANIC: int = logging.FATAL
 DEBUG_COLOR = "\033[1;37m{}\033[0m"
 INFO_COLOR = "\033[1;32m{}\033[0m"
-WARNING_COLOR = "\033[1;31m{}\033[0m"
-ERROR_COLOR = "\033[1;35m{}\033[0m"
-PANIC_COLOR = "\033[1;33m{}\033[0m"
+WARNING_COLOR = "\033[1;33m{}\033[0m"
+ERROR_COLOR = "\033[1;31m{}\033[0m"
+PANIC_COLOR = "\033[1;36m{}\033[0m"
 LEVEL_MAP = {
     DEBUG: "debug",
     INFO: "info",
