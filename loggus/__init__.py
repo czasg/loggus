@@ -20,12 +20,24 @@ INFO: int = logging.INFO
 WARNING: int = logging.WARNING
 ERROR: int = logging.ERROR
 PANIC: int = logging.FATAL
+DEBUG_COLOR = "\033[1;37m{}\033[0m"
+INFO_COLOR = "\033[1;32m{}\033[0m"
+WARNING_COLOR = "\033[1;31m{}\033[0m"
+ERROR_COLOR = "\033[1;35m{}\033[0m"
+PANIC_COLOR = "\033[1;33m{}\033[0m"
 LEVEL_MAP = {
     DEBUG: "debug",
     INFO: "info",
     WARNING: "warning",
     ERROR: "error",
     PANIC: "panic",
+}
+COLOR_LEVEL_MAP = {
+    DEBUG: DEBUG_COLOR.format(LEVEL_MAP[DEBUG]),
+    INFO: INFO_COLOR.format(LEVEL_MAP[INFO]),
+    WARNING: WARNING_COLOR.format(LEVEL_MAP[WARNING]),
+    ERROR: ERROR_COLOR.format(LEVEL_MAP[ERROR]),
+    PANIC: PANIC_COLOR.format(LEVEL_MAP[PANIC]),
 }
 
 
@@ -78,6 +90,7 @@ class Logger:
         self.out = out or sys.stdout
         self.formatter = formatter or TextFormatter
         self.level = level or INFO
+        self.color_switch = True
         self.hooks = {
             DEBUG: [],
             INFO: [],
@@ -87,6 +100,18 @@ class Logger:
 
     def NewEntry(self):
         return Entry(self)
+
+    def CloseColor(self) -> None:
+        self.color_switch = False
+
+    def OpenColor(self) -> None:
+        self.color_switch = True
+
+    @property
+    def ColorSwitch(self) -> bool:
+        if self.formatter is JsonFormatter:
+            return False
+        return self.color_switch
 
     def SetLevel(self, level: int):
         if level in LEVEL_MAP:
@@ -157,13 +182,13 @@ class Logger:
         if formatter in (TextFormatter, JsonFormatter):
             self.formatter = formatter
 
-    def withField(self, key: Any, value: Any):
+    def withField(self, key: Any, value: Any, color: str):
         entry = self.NewEntry()
-        return entry.withField(key, value)
+        return entry.withField(key, value, color)
 
-    def WithField(self, key: Any, value: Any):
+    def WithField(self, key: Any, value: Any, color: str):
         entry = self.NewEntry()
-        return entry.WithField(key, value)
+        return entry.WithField(key, value, color)
 
     def withFields(self, fields: dict):
         entry = self.NewEntry()
@@ -248,6 +273,14 @@ def SetFormatter(formatter: TextFormatter or JsonFormatter):
     _logger.SetFormatter(formatter)
 
 
+def CloseColor():
+    _logger.CloseColor()
+
+
+def OpenColor():
+    _logger.OpenColor()
+
+
 def AddHook(hook: object):
     _logger.AddHook(hook)
 
@@ -261,11 +294,14 @@ class Entry:
         self.logger = logger
         self.fields = dict()
 
-    def withField(self, key: Any, value: Any):
+    def withField(self, key: Any, value: Any, color: str = None):
+        if color and self.logger.ColorSwitch and \
+                color in (DEBUG_COLOR, INFO_COLOR, WARNING_COLOR, ERROR_COLOR, PANIC_COLOR):
+            return self.withFields({key: color.format(value)})
         return self.withFields({key: value})
 
-    def WithField(self, key: Any, value: Any):
-        return self.WithFields({key: value})
+    def WithField(self, key: Any, value: Any, color: str = None):
+        return self.withField(key, value, color)
 
     def withFields(self, fields: dict):
         try:
@@ -281,16 +317,16 @@ class Entry:
         return self.withFields(fields)
 
     def withException(self, exception: Exception):
-        return self.withField("exception", str(exception))
+        return self.withField("exception", str(exception), ERROR_COLOR)
 
     def WithException(self, exception: Exception):
-        return self.WithField("exception", str(exception))
+        return self.withException(exception)
 
     def withTraceback(self):
-        return self.withField("traceback", traceback.format_exc().strip())
+        return self.withField("traceback", traceback.format_exc().strip(), ERROR_COLOR)
 
     def WithTraceback(self):
-        return self.WithField("traceback", traceback.format_exc().strip())
+        return self.withTraceback()
 
     def log(self, level: int, msg: Any) -> None:
         try:
@@ -299,7 +335,7 @@ class Entry:
             fields = {f"{key}": f"{value}" for key, value in self.fields.items()}
         fields.update({
             "time": datetime.now(),
-            "level": LEVEL_MAP.get(level, "undefined"),
+            "level": (COLOR_LEVEL_MAP if self.logger.ColorSwitch else LEVEL_MAP).get(level, "undefined"),
             "msg": msg,
         })
         self.logger.Format(level, fields)
@@ -352,16 +388,16 @@ _entry = NewEntry(_logger)
 # default func for entry.
 
 
-def withField(key: Any, value: Any) -> Entry:
-    return _entry.withField(key, value)
+def withField(key: Any, value: Any, color: str = None) -> Entry:
+    return _entry.withField(key, value, color)
 
 
 def withFields(fields: dict) -> Entry:
     return _entry.withFields(fields)
 
 
-def WithField(key: Any, value: Any) -> Entry:
-    return _entry.WithField(key, value)
+def WithField(key: Any, value: Any, color: str = None) -> Entry:
+    return _entry.WithField(key, value, color)
 
 
 def WithFields(fields: dict) -> Entry:
