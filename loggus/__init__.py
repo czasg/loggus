@@ -176,7 +176,10 @@ class Logger:
 
     def FireHooks(self, level: int, msg: str):
         for hook in self.hooks.get(level, []):  # type: IHook
-            hook.ProcessMsg(msg)
+            try:
+                hook.ProcessMsg(msg)
+            except:
+                self.Write(f"\nHookErr[{level}:{hook}]: {traceback.format_exc()}\n\n")
 
     def SetFormatter(self, formatter: TextFormatter or JsonFormatter):
         if formatter in (TextFormatter, JsonFormatter):
