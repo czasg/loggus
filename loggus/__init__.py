@@ -474,15 +474,59 @@ def Panic(msg: Any) -> None:
 
 
 def execute():
-    args = sys.argv[1:]
+    import argparse
+
+    SetLevel(DEBUG)
     entry = WithFields({
         "author": __author__,
         "version": __version__,
     })
-    if args:
-        if args[0] in LEVEL_MAP.values():
-            getattr(entry, args[0])(args[1:])
+
+    parser = argparse.ArgumentParser(
+        prog="loggus",
+        description="This is a structured log, and you can output json easy.",
+        epilog="you can also add Hook for each output, such like push log to MQ, or write log into file.",
+    )
+
+    parser.add_argument("-d", "--debug", action='store_true', help="like debug(msg)")
+    parser.add_argument("-i", "--info", action='store_true', help="like info(msg)", default=True)
+    parser.add_argument("-w", "--warning", action='store_true', help="like warning(msg)")
+    parser.add_argument("-e", "--error", action='store_true', help="like error(msg)")
+    parser.add_argument("-p", "--panic", action='store_true', help="like panic(msg), it will exit 50.")
+    parser.add_argument("-j", "--json", action='store_true',
+                        help="set json formatter, like SetFormatter(JsonFormatter)")
+    parser.add_argument("-f", "--field", action='append', type=str, default=[],
+                        help="key=value, like WithField(key, value)")
+    parser.add_argument("-fs", "--fields", action='append', type=str, default=[],
+                        help="json_data, like WithFields(json.loads(json_data))")
+    parser.add_argument("msg", nargs="*", help="something you want to output.")
+
+    args = parser.parse_args()
+
+    msg = " ".join(args.msg)
+
+    for field in args.field:
+        fields = field.split("=", 1)
+        if len(fields) == 2:
+            entry = entry.WithField(*fields)
+    for fields in args.fields:
+        try:
+            fields = json.loads(fields)
+        except:
+            entry.WithField("InvalidJsonData", fields, WARNING_COLOR).WithTraceback().Panic(msg)
+            return
         else:
-            for index, argv in enumerate(args):
-                entry = entry.WithField(f"argv{index + 1}", argv)
-            entry.Info("hello loggus")
+            entry = entry.WithFields(fields)
+
+    if args.json:
+        SetFormatter(JsonFormatter)
+    if args.debug:
+        entry.debug(msg)
+    if args.info:
+        entry.info(msg)
+    if args.warning:
+        entry.warning(msg)
+    if args.error:
+        entry.error(msg)
+    if args.panic:
+        entry.panic(msg)
