@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.11"
+__version__ = "0.0.12"
 
 import re
 import sys
@@ -39,6 +39,12 @@ COLOR_LEVEL_MAP = {
     ERROR: ERROR_COLOR.format(LEVEL_MAP[ERROR]),
     PANIC: PANIC_COLOR.format(LEVEL_MAP[PANIC]),
 }
+
+# fix messy code when output color in win32.
+if sys.platform == "win32":
+    import colorama
+
+    colorama.init(autoreset=True)
 
 
 # json encoder:

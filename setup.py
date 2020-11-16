@@ -37,6 +37,9 @@ setup(
     entry_points={
         'console_scripts': ['loggus = loggus:execute']
     },
+    install_requires=[
+        "colorama",
+    ],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
