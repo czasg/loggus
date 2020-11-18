@@ -223,45 +223,45 @@ class Logger:
         entry = self.NewEntry()
         return entry.WithTraceback()
 
-    def debug(self, msg: Any) -> None:
+    def debug(self,*args: Any) -> None:
         entry = self.NewEntry()
-        entry.debug(msg)
+        entry.debug(*args)
 
-    def Debug(self, msg: Any) -> None:
+    def Debug(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.Debug(msg)
+        entry.Debug(*args)
 
-    def info(self, msg: Any) -> None:
+    def info(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.info(msg)
+        entry.info(*args)
 
-    def Info(self, msg: Any) -> None:
+    def Info(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.Info(msg)
+        entry.Info(*args)
 
-    def warning(self, msg: Any) -> None:
+    def warning(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.warning(msg)
+        entry.warning(*args)
 
-    def Warning(self, msg: Any) -> None:
+    def Warning(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.Warning(msg)
+        entry.Warning(*args)
 
-    def error(self, msg: Any) -> None:
+    def error(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.error(msg)
+        entry.error(*args)
 
-    def Error(self, msg: Any) -> None:
+    def Error(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.Error(msg)
+        entry.Error(*args)
 
-    def panic(self, msg: Any) -> None:
+    def panic(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.panic(msg)
+        entry.panic(*args)
 
-    def Panic(self, msg: Any) -> None:
+    def Panic(self, *args: Any) -> None:
         entry = self.NewEntry()
-        entry.Panic(msg)
+        entry.Panic(*args)
 
 
 def NewLogger(out: Any = None, formatter: Any = None, level: int = None) -> Logger:
@@ -337,7 +337,7 @@ class Entry:
     def WithTraceback(self):
         return self.withTraceback()
 
-    def log(self, level: int, msg: Any) -> None:
+    def log(self, level: int, *args: Any) -> None:
         try:
             fields = deepcopy(self.fields)
         except:
@@ -345,45 +345,45 @@ class Entry:
         fields.update({
             "time": datetime.now(),
             "level": (COLOR_LEVEL_MAP if self.logger.ColorSwitch else LEVEL_MAP).get(level, "undefined"),
-            "msg": msg,
+            "msg": " ".join([f"{arg}" for arg in args]),
         })
         self.logger.Format(level, fields)
 
-    def Log(self, level: int, msg: Any):
+    def Log(self, level: int, *args: Any):
         if self.logger.IsLevelEnabled(level):
-            self.log(level, msg)
+            self.log(level, *args)
             if level >= PANIC:
                 sys.exit(PANIC)
 
-    def debug(self, msg: Any) -> None:
-        self.Log(DEBUG, msg)
+    def debug(self, *args: Any) -> None:
+        self.Log(DEBUG, *args)
 
-    def Debug(self, msg: Any) -> None:
-        self.debug(msg)
+    def Debug(self, *args: Any) -> None:
+        self.debug(*args)
 
-    def info(self, msg: Any) -> None:
-        self.Log(INFO, msg)
+    def info(self, *args: Any) -> None:
+        self.Log(INFO, *args)
 
-    def Info(self, msg: Any) -> None:
-        self.info(msg)
+    def Info(self, *args: Any) -> None:
+        self.info(*args)
 
-    def warning(self, msg: Any) -> None:
-        self.Log(WARNING, msg)
+    def warning(self, *args: Any) -> None:
+        self.Log(WARNING, *args)
 
-    def Warning(self, msg: Any) -> None:
-        self.warning(msg)
+    def Warning(self, *args: Any) -> None:
+        self.warning(*args)
 
-    def error(self, msg: Any) -> None:
-        self.Log(ERROR, msg)
+    def error(self, *args: Any) -> None:
+        self.Log(ERROR, *args)
 
-    def Error(self, msg: Any) -> None:
-        self.error(msg)
+    def Error(self, *args: Any) -> None:
+        self.error(*args)
 
-    def panic(self, msg: Any) -> None:
-        self.Log(PANIC, msg)
+    def panic(self, *args: Any) -> None:
+        self.Log(PANIC, *args)
 
-    def Panic(self, msg: Any) -> None:
-        self.panic(msg)
+    def Panic(self, *args: Any) -> None:
+        self.panic(*args)
 
 
 def NewEntry(logger: Logger = None) -> Entry:
@@ -429,54 +429,54 @@ def WithTraceback():
     return _entry.WithTraceback()
 
 
-def debug(msg: Any) -> None:
+def debug(*args: Any) -> None:
     entry = NewEntry()
-    entry.debug(msg)
+    entry.debug(*args)
 
 
-def info(msg: Any) -> None:
+def info(*args: Any) -> None:
     entry = NewEntry()
-    entry.info(msg)
+    entry.info(*args)
 
 
-def warning(msg: Any) -> None:
+def warning(*args: Any) -> None:
     entry = NewEntry()
-    entry.warning(msg)
+    entry.warning(*args)
 
 
-def error(msg: Any) -> None:
+def error(*args: Any) -> None:
     entry = NewEntry()
-    entry.error(msg)
+    entry.error(*args)
 
 
-def panic(msg: Any) -> None:
+def panic(*args: Any) -> None:
     entry = NewEntry()
-    entry.panic(msg)
+    entry.panic(*args)
 
 
-def Debug(msg: Any) -> None:
+def Debug(*args: Any) -> None:
     entry = NewEntry()
-    entry.Debug(msg)
+    entry.Debug(*args)
 
 
-def Info(msg: Any) -> None:
+def Info(*args: Any) -> None:
     entry = NewEntry()
-    entry.Info(msg)
+    entry.Info(*args)
 
 
-def Warning(msg: Any) -> None:
+def Warning(*args: Any) -> None:
     entry = NewEntry()
-    entry.Warning(msg)
+    entry.Warning(*args)
 
 
-def Error(msg: Any) -> None:
+def Error(*args: Any) -> None:
     entry = NewEntry()
-    entry.Error(msg)
+    entry.Error(*args)
 
 
-def Panic(msg: Any) -> None:
+def Panic(*args: Any) -> None:
     entry = NewEntry()
-    entry.Panic(msg)
+    entry.Panic(*args)
 
 
 def execute():
@@ -509,8 +509,6 @@ def execute():
 
     args = parser.parse_args()
 
-    msg = " ".join(args.msg)
-
     for field in args.field:
         fields = field.split("=", 1)
         if len(fields) == 2:
@@ -519,7 +517,7 @@ def execute():
         try:
             fields = json.loads(fields)
         except:
-            entry.WithField("InvalidJsonData", fields, WARNING_COLOR).WithTraceback().Panic(msg)
+            entry.WithField("InvalidJsonData", fields, WARNING_COLOR).WithTraceback().Panic(*args.msg)
             return
         else:
             entry = entry.WithFields(fields)
@@ -527,12 +525,12 @@ def execute():
     if args.json:
         SetFormatter(JsonFormatter)
     if args.debug:
-        entry.debug(msg)
+        entry.debug(*args.msg)
     if args.info:
-        entry.info(msg)
+        entry.info(*args.msg)
     if args.warning:
-        entry.warning(msg)
+        entry.warning(*args.msg)
     if args.error:
-        entry.error(msg)
+        entry.error(*args.msg)
     if args.panic:
-        entry.panic(msg)
+        entry.panic(*args.msg)
