@@ -47,7 +47,6 @@ class Collector:
 TotalCases: {self.allSample}
 pass: {self.passSample}
 fail: {self.failSample}
-
 """)
         if self.failSample:
             print(colorama.Fore.RED + f"Test Failed")
@@ -106,7 +105,10 @@ def create(pyfile: str):
     template = f"""# coding: utf-8
 import loggus
 
-from {pyfile} import *
+try:
+    from .{pyfile} import *
+except:
+    from {pyfile} import *
 
 """
     for attr in dir(module):
@@ -119,6 +121,7 @@ from {pyfile} import *
         if hasattr(attrIns, "__module__") and attrIns.__module__ != pyfile:
             loggus.withField("module", attrIns.__module__).warning(f"ignore other module attr<{attr}>")
             continue
+        loggus.debug(f"found {attr}, generate UnitTest_{attr}")
         sig = inspect.signature(attrIns)
         parameters = []
         argsKeys = []
@@ -145,9 +148,15 @@ from {pyfile} import *
                         {k: {"kind": v.kind.__str__(), "type": f"{v.annotation}"}}))
         argsKeys = ", ".join(argsKeys)
         if argsKeys:
+            argsKeys += ","
             argsKeys += " = sample[\"parameters\"]"
         argsValues = ", ".join(argsValues)
         parameters = "\n".join(parameters)
+        loggus.WithFields({
+            "argsKeys": argsKeys,
+            "argsValues": argsValues,
+            "parameters": parameters,
+        }).debug("generate successful")
         template += f"""
 def UnitTest_{attr}(log: loggus.Entry) -> None:
     entry = log.withField("funcName", "{attr}")
@@ -165,13 +174,11 @@ def UnitTest_{attr}(log: loggus.Entry) -> None:
     # perform validation.
     for sample in samples[1:]:
         log = entry.withField("sampleName", sample["name"])
-        want = None
         try:
             {argsKeys}
             want = {attr}({argsValues})
         except:
-            log = log.withTraceback()
-            log.info("pass") if sample["wantErr"] else log.error("ExceptionErr")
+            log.info("pass") if sample["wantErr"] else log.withTraceback().error("ExceptionErr")
         else:
             if sample["wantErr"]:
                 log.error("Want Err But Pass")
@@ -207,6 +214,7 @@ def scan():
             print(f">>> found unittest file {actual}:")
             modulePath = os.path.abspath(os.path.dirname(actual))
             sys.path.append(modulePath)
+            loggus.debug(f"add module path: {modulePath}")
             module = actual. \
                 replace(".\\", ""). \
                 replace("\\", "."). \
@@ -215,9 +223,11 @@ def scan():
             try:
                 module = importlib.import_module(module)
                 for attr in dir(module):
+                    loggus.debug(f"found attr<{attr}>")
                     if attr.startswith("UnitTest_"):
                         getattr(module, attr)(log)
             except:
                 log.withTraceback().panic("TestErr")
             sys.path.remove(modulePath)
+            loggus.debug(f"remove module path: {modulePath}")
     collector.show()
