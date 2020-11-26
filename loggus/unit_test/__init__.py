@@ -138,11 +138,11 @@ from {pyfile} import *
             if v.annotation is sig.empty:
                 parameters.append(
                     "                {},".format(
-                        {k: {"kind": f"{v.kind}"}}))
+                        {k: {"kind": v.kind.__str__()}}))
             else:
                 parameters.append(
                     "                {},".format(
-                        {k: {"kind": f"{v.kind}", "type": f"{v.annotation}"}}))
+                        {k: {"kind": v.kind.__str__(), "type": f"{v.annotation}"}}))
         argsKeys = ", ".join(argsKeys)
         if argsKeys:
             argsKeys += " = sample[\"parameters\"]"
