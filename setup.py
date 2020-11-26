@@ -10,6 +10,15 @@ from setuptools import setup, find_packages
 3、twine upload dist/__packages__-__version__.tar.gz
 """
 
+"""MANIFEST.in
+global-include pat1 pat2 ... > Include all files anywhere
+global-exclude pat1 pat2 ... > Exclude all files anywhere
+graft dir-pattern > Include all files under directories matching dir-pattern
+prune dir-pattern > Exclude all files under directories matching dir-pattern
+
+such as: global-exclude *.py[cod]
+"""
+
 
 def read(*parts):
     here = os.path.abspath(os.path.dirname(__file__))
