@@ -3,6 +3,7 @@ __author__ = "https://github.com/CzaOrz"
 __version__ = "0.0.12"
 
 import re
+import os
 import sys
 import json
 import logging
@@ -223,7 +224,7 @@ class Logger:
         entry = self.NewEntry()
         return entry.WithTraceback()
 
-    def debug(self,*args: Any) -> None:
+    def debug(self, *args: Any) -> None:
         entry = self.NewEntry()
         entry.debug(*args)
 
@@ -482,7 +483,6 @@ def Panic(*args: Any) -> None:
 def execute():
     import argparse
 
-    SetLevel(DEBUG)
     entry = WithFields({
         "author": __author__,
         "version": __version__,
@@ -491,46 +491,45 @@ def execute():
     parser = argparse.ArgumentParser(
         prog="loggus",
         description="This is a structured log, and you can output json easy.",
-        epilog="you can also add Hook for each output, such like push log to MQ, or write log into file.",
+        epilog="you can also add Hook for each output, such like push log to MQ, or write log into file.\n"
+               "other features:\n"
+               "1、start a unit test just like `-u`.\n"
+               "2、start a stress test --> todo.",
     )
+    parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
-    parser.add_argument("-d", "--debug", action='store_true', help="like debug(msg)")
-    parser.add_argument("-i", "--info", action='store_true', help="like info(msg)", default=True)
-    parser.add_argument("-w", "--warning", action='store_true', help="like warning(msg)")
-    parser.add_argument("-e", "--error", action='store_true', help="like error(msg)")
-    parser.add_argument("-p", "--panic", action='store_true', help="like panic(msg), it will exit 50.")
-    parser.add_argument("-j", "--json", action='store_true',
-                        help="set json formatter, like SetFormatter(JsonFormatter)")
-    parser.add_argument("-f", "--field", action='append', type=str, default=[],
-                        help="key=value, like WithField(key, value)")
-    parser.add_argument("-fs", "--fields", action='append', type=str, default=[],
-                        help="json_data, like WithFields(json.loads(json_data))")
-    parser.add_argument("msg", nargs="*", help="something you want to output.")
+    parser.add_argument("-l", "--level", type=str,
+                        help="log level, you can choose [debug/info/warning/error], default info.", default="info")
+    parser.add_argument("-u", "--unit-test", action='store_true', help="start a unit test mode.")
+    parser.add_argument("-c", "--create", type=str, help="use with `-u`, it can create a unit test file for a py-file.")
+    parser.add_argument("msg", nargs="*", help="try write something, and see what loggus will return.")
 
     args = parser.parse_args()
 
-    for field in args.field:
-        fields = field.split("=", 1)
-        if len(fields) == 2:
-            entry = entry.WithField(*fields)
-    for fields in args.fields:
-        try:
-            fields = json.loads(fields)
-        except:
-            entry.WithField("InvalidJsonData", fields, WARNING_COLOR).WithTraceback().Panic(*args.msg)
-            return
-        else:
-            entry = entry.WithFields(fields)
+    if args.level:
+        if args.level.upper() == "DEBUG":
+            SetLevel(DEBUG)
+        elif args.level.upper() == "INFO":
+            SetLevel(INFO)
+        elif args.level.upper() == "WARNING":
+            SetLevel(WARNING)
+        elif args.level.upper() == "ERROR":
+            SetLevel(ERROR)
+    if args.unit_test:
+        from loggus.unit_test import create, scan
 
-    if args.json:
-        SetFormatter(JsonFormatter)
-    if args.debug:
+        sys.path.append(os.path.abspath(os.path.dirname(__name__)))
+        if args.create:
+            create(args.create)
+        else:
+            scan()
+    elif args.create:
+        entry.withField("create", args.create).panic("you should add `-u` to create a unit test file.")
+    elif args.msg:
+        SetLevel(DEBUG)
         entry.debug(*args.msg)
-    if args.info:
         entry.info(*args.msg)
-    if args.warning:
         entry.warning(*args.msg)
-    if args.error:
-        entry.error(*args.msg)
-    if args.panic:
         entry.panic(*args.msg)
+    else:
+        entry.info("welcome to use loggus.")
