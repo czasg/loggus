@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.14"
+__version__ = "0.0.15"
 
 import re
 import os
