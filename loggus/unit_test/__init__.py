@@ -206,6 +206,9 @@ def UnitTest_{attr}(log: loggus.Entry) -> None:
 
 # scan all test module in current dir.
 def scan():
+    import coverage
+    cov = coverage.Coverage(None, include=["./*"], omit=["*/*_test.py"])
+    cov.start()
     for path, dirs, files in os.walk("."):
         for file in files:
             if not file.endswith("_test.py"):
@@ -230,4 +233,6 @@ def scan():
                 log.withTraceback().panic("TestErr")
             sys.path.remove(modulePath)
             loggus.debug(f"remove module path: {modulePath}")
+    cov.stop()
+    print(cov.report())
     collector.show()
