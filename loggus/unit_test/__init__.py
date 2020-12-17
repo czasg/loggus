@@ -277,7 +277,7 @@ def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
     sys.path.remove(unittest_yaml)
     cov.stop()
     if save:
-        cov.xml_report(outfile=xml) if xml else None
+        cov.xml_report() if xml else None
         cov.html_report() if html else None
     print("\n  --------------------------- ")
     print("  ------ UnitTest Over ------ ")
