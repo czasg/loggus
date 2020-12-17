@@ -241,7 +241,7 @@ def UnitTest_{attr}(log: loggus.Entry) -> None:
 
 
 # scan all test module in current dir.
-def scan(save: bool = False, xml: str = "coverage.xml") -> None:
+def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
     import coverage
 
     unittest_yaml = find_unittest_yaml()
@@ -277,7 +277,8 @@ def scan(save: bool = False, xml: str = "coverage.xml") -> None:
     sys.path.remove(unittest_yaml)
     cov.stop()
     if save:
-        cov.xml_report(outfile=xml)
+        cov.xml_report(outfile=xml) if xml else None
+        cov.html_report() if html else None
     print("\n  --------------------------- ")
     print("  ------ UnitTest Over ------ ")
     print("  --------------------------- \n")

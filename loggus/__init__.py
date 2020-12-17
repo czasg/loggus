@@ -512,8 +512,10 @@ def pyut():
     parser.add_argument("-c", "--create", type=str, help="create a unit test file for a py-file.")
     parser.add_argument("-t", "--test", action="store_true", help="start a unit test.")
     parser.add_argument("-s", "--save", action="store_true", help="save reports when start a unit test.")
-    parser.add_argument("-x", "--xml", type=str, nargs='?', default="coverage.xml", help="if `-s`, then generate a xml report after unit test.")
-    parser.add_argument("--delete", action="store_true", help="delete all test files, use it when you packages such like Dockerfile.")
+    parser.add_argument("--xml", action="store_true", help="if `-s`, then generate a xml report after unit test.")
+    parser.add_argument("--html", action="store_true", help="if `-s`, then generate a html report after unit test.")
+    parser.add_argument("--delete", action="store_true",
+                        help="delete all test files, use it when you packages such like Dockerfile.")
 
     args = parser.parse_args()
 
@@ -522,7 +524,7 @@ def pyut():
     elif args.create:
         create(args.create)
     elif args.test:
-        scan(args.save, args.xml)
+        scan(args.save, args.xml, args.html)
     elif args.delete:
         delete()
     else:
