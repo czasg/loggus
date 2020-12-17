@@ -10,15 +10,6 @@ import importlib
 from threading import RLock
 
 
-def TryImportModule(module: str, dir=None):
-    try:
-        return importlib.import_module(module)
-    except:
-        if dir is None:
-            dir = os.path.dirname(".").replace(".\\", "").replace("\\", "")
-    pass
-
-
 # collect & count all samples.
 class Collector:
     allSample = 0
