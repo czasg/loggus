@@ -120,6 +120,12 @@ metadata:
 
 # create a py test file.
 def create(pyfile: str):
+    currentPath = os.path.abspath(".")
+    if not find_unittest_yaml():
+        loggus.panic("init project first")
+    os.chdir(currentPath)
+    sys.path.append(currentPath)
+
     if not os.path.isfile(pyfile):
         loggus.panic(f"there is not a file: <{pyfile}>.")
     if os.path.dirname(pyfile):
@@ -230,6 +236,7 @@ def UnitTest_{attr}(log: loggus.Entry) -> None:
     ensureUnique(f"{pyfile}_test.py")
     with open(f"{pyfile}_test.py", "w", encoding="utf-8") as f:
         f.write(template)
+    sys.path.remove(currentPath)
     loggus.info("create unit test file successful~")
 
 
