@@ -40,13 +40,12 @@ class Collector:
             self.failSample += 1
             self.addSample()
 
-    def show(self):
+    def show(self, other: str = ""):
         print(f"""
- --------------- 
-
+CodeCoverage: {int(other)}%
 TotalCases: {self.allSample}
-pass: {self.passSample}
-fail: {self.failSample}
+Pass: {self.passSample}
+Fail: {self.failSample}
 """)
         if self.failSample:
             print(colorama.Fore.RED + f"Test Failed")
@@ -87,6 +86,36 @@ logger.AddHook(CollectorPassHook())
 logger.AddHook(CollectorFailHook())
 # bind this logger for entry.
 entry = loggus.NewEntry(logger)
+
+
+def find_unittest_yaml(path=".", last=None):
+    if path == last:
+        return None
+    path = os.path.abspath(path)
+    last = path
+    if os.path.exists(os.path.join(path, "unittest.yaml")):
+        os.chdir(path)
+        return path
+    path = os.path.dirname(path)
+    return find_unittest_yaml(path, last)
+
+
+# init a unittest.yaml for project
+def init():
+    unittest_yaml = find_unittest_yaml()
+    if unittest_yaml:
+        loggus. \
+            withField("UnitTestYamlPath", unittest_yaml, loggus.ERROR_COLOR). \
+            panic(f"project had already init!")
+    projectName = os.path.basename(os.path.abspath("."))
+    with open("unittest.yaml", "w", encoding="utf-8") as f:
+        f.write(f"""version: beta
+kind: unittest
+metadata:
+  project:
+    name: {projectName}
+""")
+    loggus.withField("UnitTestYamlPath", unittest_yaml).info("init success!")
 
 
 # create a py test file.
@@ -205,8 +234,13 @@ def UnitTest_{attr}(log: loggus.Entry) -> None:
 
 
 # scan all test module in current dir.
-def scan():
+def scan(save: bool = False, xml: str = "coverage.xml") -> None:
     import coverage
+
+    unittest_yaml = find_unittest_yaml()
+    if not unittest_yaml:
+        loggus.panic("not found unittest.yaml, please `init` for your project.")
+    sys.path.append(unittest_yaml)
     cov = coverage.Coverage(None, include=["./*"], omit=["*/*_test.py"])
     cov.start()
     for path, dirs, files in os.walk("."):
@@ -233,6 +267,28 @@ def scan():
                 log.withTraceback().panic("TestErr")
             sys.path.remove(modulePath)
             loggus.debug(f"remove module path: {modulePath}")
+    sys.path.remove(unittest_yaml)
     cov.stop()
-    print(cov.report())
-    collector.show()
+    if save:
+        cov.xml_report(outfile=xml)
+    print("\n  --------------------------- ")
+    print("  ------ UnitTest Over ------ ")
+    print("  --------------------------- \n")
+    collector.show(cov.report())
+
+
+def delete():
+    unittest_yaml = find_unittest_yaml()
+    if not unittest_yaml:
+        loggus.panic("not found unittest.yaml, please `init` for your project.")
+    for path, dirs, files in os.walk("."):
+        for file in files:
+            if not file.endswith("_test.py"):
+                continue
+            actual = os.path.join(path, file)
+            try:
+                os.remove(actual)
+            except:
+                loggus.withField("file", actual).error("remove failure!")
+            else:
+                loggus.withField("file", actual).info("remove success!")

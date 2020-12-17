@@ -3,7 +3,6 @@ __author__ = "https://github.com/CzaOrz"
 __version__ = "0.0.15"
 
 import re
-import os
 import sys
 import json
 import logging
@@ -483,53 +482,48 @@ def Panic(*args: Any) -> None:
 def execute():
     import argparse
 
-    entry = WithFields({
+    WithFields({
         "author": __author__,
         "version": __version__,
-    })
+    }).Info("welcome to use loggus.")
 
     parser = argparse.ArgumentParser(
         prog="loggus",
         description="This is a structured log, and you can output json easy.",
         epilog="you can also add Hook for each output, such like push log to MQ, or write log into file.\n"
                "other features:\n"
-               "1、start a unit test just like `-u`.\n"
-               "2、start a stress test --> todo.",
+               "1、start a unit test just `pyut -h`.\n"
+               "2、start a stress test just `pyst -h`.\n",
     )
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
+    parser.print_help()
 
-    parser.add_argument("-l", "--level", type=str,
-                        help="log level, you can choose [debug/info/warning/error], default info.", default="info")
-    parser.add_argument("-u", "--unit-test", action='store_true', help="start a unit test mode.")
-    parser.add_argument("-c", "--create", type=str, help="use with `-u`, it can create a unit test file for a py-file.")
-    parser.add_argument("msg", nargs="*", help="try write something, and see what loggus will return.")
+
+def pyut():
+    import argparse
+
+    from loggus.unit_test import init, create, scan, delete
+
+    parser = argparse.ArgumentParser(
+        prog="pyut",
+        description="This is a unittest tools like go test.",
+    )
+    parser.add_argument("-i", "--init", action="store_true", help="init a unittest.yaml for project.")
+    parser.add_argument("-c", "--create", type=str, help="create a unit test file for a py-file.")
+    parser.add_argument("-t", "--test", action="store_true", help="start a unit test.")
+    parser.add_argument("-s", "--save", action="store_true", help="save reports when start a unit test.")
+    parser.add_argument("-x", "--xml", type=str, nargs='?', default="coverage.xml", help="if `-s`, then generate a xml report after unit test.")
+    parser.add_argument("--delete", action="store_true", help="delete all test files, use it when you packages such like Dockerfile.")
 
     args = parser.parse_args()
 
-    if args.level:
-        if args.level.upper() == "DEBUG":
-            SetLevel(DEBUG)
-        elif args.level.upper() == "INFO":
-            SetLevel(INFO)
-        elif args.level.upper() == "WARNING":
-            SetLevel(WARNING)
-        elif args.level.upper() == "ERROR":
-            SetLevel(ERROR)
-    if args.unit_test:
-        from loggus.unit_test import create, scan
-
-        sys.path.append(os.path.abspath(os.path.dirname(__name__)))
-        if args.create:
-            create(args.create)
-        else:
-            scan()
+    if args.init:
+        init()
     elif args.create:
-        entry.withField("create", args.create).panic("you should add `-u` to create a unit test file.")
-    elif args.msg:
-        SetLevel(DEBUG)
-        entry.debug(*args.msg)
-        entry.info(*args.msg)
-        entry.warning(*args.msg)
-        entry.panic(*args.msg)
+        create(args.create)
+    elif args.test:
+        scan(args.save, args.xml)
+    elif args.delete:
+        delete()
     else:
-        entry.info("welcome to use loggus.")
+        parser.print_help()
