@@ -529,3 +529,23 @@ def pyut():
         delete()
     else:
         parser.print_help()
+
+
+class withCallback:
+
+    def __init__(self, callback: callable = None):
+        self.callback = callback or (lambda *args: withTraceback().error())
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            try:
+                self.callback(exc_type, exc_val, exc_tb)
+            except:
+                withTraceback().error()
+        return True
+
+
+class WithCallback(withCallback): ...
