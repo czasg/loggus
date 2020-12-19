@@ -253,7 +253,8 @@ def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
             module = actual. \
                 replace(".\\", ""). \
                 replace("\\", "."). \
-                replace(".py", "")
+                replace(".py", "").\
+                strip("./")
             log = entry.withField("module", module)
             try:
                 module = importlib.import_module(module)
