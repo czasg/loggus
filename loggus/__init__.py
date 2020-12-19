@@ -7,6 +7,7 @@ import sys
 import json
 import logging
 import traceback
+import contextlib
 
 from typing import Any
 from copy import deepcopy
@@ -223,6 +224,14 @@ class Logger:
         entry = self.NewEntry()
         return entry.WithTraceback()
 
+    def withCallback(self, callback: callable = None):
+        entry = self.NewEntry()
+        return entry.withCallback(callback)
+
+    def WithCallback(self, callback: callable = None):
+        entry = self.NewEntry()
+        return entry.WithCallback(callback)
+
     def debug(self, *args: Any) -> None:
         entry = self.NewEntry()
         entry.debug(*args)
@@ -336,6 +345,21 @@ class Entry:
 
     def WithTraceback(self):
         return self.withTraceback()
+
+    @contextlib.contextmanager
+    def withCallback(self, callback: callable = None):
+        try:
+            yield
+        except Exception as e:
+            self.withTraceback().error(e)
+            if callback:
+                try:
+                    callback(e)
+                except Exception as e:
+                    self.withTraceback().error(e)
+
+    def WithCallback(self, callback: callable = None):
+        return self.withCallback(callback)
 
     def log(self, level: int, *args: Any) -> None:
         try:
@@ -534,18 +558,21 @@ def pyut():
 class withCallback:
 
     def __init__(self, callback: callable = None):
-        self.callback = callback or (lambda *args: withTraceback().error())
+        self.callback = callback
 
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
-            try:
-                self.callback(exc_type, exc_val, exc_tb)
-            except:
-                withTraceback().error()
+            withTraceback().error(exc_val)
+            if self.callback:
+                try:
+                    self.callback(exc_val)
+                except:
+                    withTraceback().error(exc_val)
         return True
 
 
-class WithCallback(withCallback): ...
+class WithCallback(withCallback):
+    pass
