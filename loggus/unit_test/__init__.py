@@ -12,6 +12,8 @@ from threading import RLock
 
 # collect & count all samples.
 class Collector:
+    start = time.monotonic()
+
     allSample = 0
     passSample = 0
     failSample = 0
@@ -37,6 +39,7 @@ CodeCoverage: {int(other)}%
 TotalCases: {self.allSample}
 Pass: {self.passSample}
 Fail: {self.failSample}
+Cost: {time.monotonic() - self.start:.3f} s
 """)
         if self.failSample:
             print(colorama.Fore.RED + f"Test Failed")
@@ -118,11 +121,17 @@ def create(pyfile: str):
     sys.path.append(currentPath)
 
     if not os.path.isfile(pyfile):
-        loggus.panic(f"there is not a file: <{pyfile}>.")
-    if os.path.dirname(pyfile):
-        loggus.panic("can't found file in current dir.")
+        loggus.panic(f"not exist file: <{pyfile}>.")
+    dirName = os.path.dirname(pyfile)
+    if dirName:
+        sys.path.append(dirName)
 
-    pyfile = pyfile.replace(".py", "")
+    pyfile = pyfile. \
+        replace(".\\", ""). \
+        replace("\\", "."). \
+        replace(".py", ""). \
+        strip("./")
+
     try:
         module = importlib.import_module(pyfile)
     except:
@@ -253,7 +262,7 @@ def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
             module = actual. \
                 replace(".\\", ""). \
                 replace("\\", "."). \
-                replace(".py", "").\
+                replace(".py", ""). \
                 strip("./")
             log = entry.withField("module", module)
             try:
@@ -274,7 +283,12 @@ def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
     print("\n  --------------------------- ")
     print("  ------ UnitTest Over ------ ")
     print("  --------------------------- \n")
-    collector.show(cov.report())
+    try:
+        collector.show(cov.report())
+    except coverage.CoverageException:
+        loggus.withFields({
+            "ProjectPath": unittest_yaml,
+        }).error("Not Found Test Files.")
 
 
 def delete():
