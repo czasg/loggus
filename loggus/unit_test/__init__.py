@@ -129,6 +129,7 @@ def create(pyfile: str):
     pyfile = pyfile. \
         replace(".\\", ""). \
         replace("\\", "."). \
+        replace("/", "."). \
         replace(".py", ""). \
         strip("./")
 
@@ -262,6 +263,7 @@ def scan(save: bool = False, xml: bool = False, html: bool = False) -> None:
             module = actual. \
                 replace(".\\", ""). \
                 replace("\\", "."). \
+                replace("/", "."). \
                 replace(".py", ""). \
                 strip("./")
             log = entry.withField("module", module)
