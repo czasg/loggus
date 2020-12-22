@@ -194,8 +194,8 @@ except:
             "parameters": parameters,
         }).debug("generate successful")
         template += f"""
-def UnitTest_{attr}(log: loggus.Entry) -> None:
-    entry = log.withField("funcName", "{attr}")
+def UnitTest_{attr}(entry: loggus.Entry) -> None:
+    entry = entry.withField("funcName", "{attr}")
     # test cases.
     samples = [
         {{
