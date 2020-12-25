@@ -1,4 +1,7 @@
 # coding: utf-8
+import time
+import loggus
+
 from threading import RLock
 
 
@@ -18,6 +21,8 @@ class Collector:
     sendMsgTimeTotal = 0
     resMsgTimeTotal = 0
     lock = RLock()
+
+    start = time.monotonic()
 
     def record(self, connCreateTime: float, sendMsgTime: float, resMsgTime: float) -> None:
         with self.lock:
@@ -39,6 +44,15 @@ class Collector:
         with self.lock:
             self.errSamples += 1
             self.record(connCreateTime, sendMsgTime, resMsgTime)
+
+    def show(self):
+        loggus.withFields({
+            "samples": self.samples,
+            "errSamples": self.errSamples,
+            "connCreateTimeAvg": self.connCreateTimeAvg,
+            "sendMsgTimeAvg": self.sendMsgTimeAvg,
+            "resMsgTimeAvg": self.resMsgTimeAvg,
+        }).info(f"{int(self.samples / (time.monotonic() - self.start))} QPS")
 
 
 collector = Collector()

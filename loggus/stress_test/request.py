@@ -71,7 +71,7 @@ def parseRequestInfo(method: str, url: str, headers: dict = None, body: str = No
     return hostIP, port, requestMsg
 
 
-def request(address: Tuple[str, int], requestMsg: bytes, timeout: int = None) -> Tuple[bytes, float, float, float]:
+def request(address: Tuple[str, int], requestMsg: bytes, timeout: int = None):
     sock = socket.socket()
     sock.settimeout(timeout) if timeout else None
     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -84,28 +84,12 @@ def request(address: Tuple[str, int], requestMsg: bytes, timeout: int = None) ->
     sock.send(requestMsg)
     sendMsgTime = time.monotonic() - start
 
-    hr = client.HTTPResponse(sock)
     start = time.monotonic()
+    hr = client.HTTPResponse(sock)
     hr.begin()
-    response = hr.read()
+    body = hr.read()
     recvMsgTime = time.monotonic() - start
 
     hr.close()
-    return response, connCreateTime, sendMsgTime, recvMsgTime
-
-
-if __name__ == '__main__':
-    import urllib3
-
-    http = urllib3.PoolManager()
-    response = http.request("GET", "http://fanyi.youdao.com")
-    print(response.data)
-
-    import requests
-
-    print(requests.get("http://fanyi.youdao.com").content)
-
-    hostIP, port, requestMsg = parseRequestInfo("GET", "http://fanyi.youdao.com", {}, "")
-    print(hostIP, port, requestMsg)
-    response, connCreateTime, sendMsgTime, recvMsgTime = request((hostIP, port), requestMsg, 60)
-    print(response)
+    sock.close()
+    return hr.status, hr.getheaders(), body, connCreateTime, sendMsgTime, recvMsgTime

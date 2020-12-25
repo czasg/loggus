@@ -351,12 +351,10 @@ class Entry:
         try:
             yield
         except Exception as e:
-            self.withTraceback().error(e)
-            if callback:
-                try:
-                    callback(e)
-                except Exception as e:
-                    self.withTraceback().error(e)
+            try:
+                (callback or (lambda *args: self.withTraceback().error(*args)))(e)
+            except Exception as e:
+                self.withTraceback().error(e)
 
     def WithCallback(self, callback: callable = None):
         return self.withCallback(callback)
@@ -503,6 +501,28 @@ def Panic(*args: Any) -> None:
     entry.Panic(*args)
 
 
+class withCallback:
+
+    def __init__(self, callback: callable = None):
+        self.callback = callback or (lambda *args: withTraceback().error(*args))
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            if self.callback:
+                try:
+                    self.callback(exc_val)
+                except:
+                    withTraceback().error(exc_val)
+        return True
+
+
+class WithCallback(withCallback):
+    pass
+
+
 def execute():
     import argparse
 
@@ -555,24 +575,28 @@ def pyut():
         parser.print_help()
 
 
-class withCallback:
+def pyst():
+    import argparse
 
-    def __init__(self, callback: callable = None):
-        self.callback = callback
+    from loggus.stress_test import stress
 
-    def __enter__(self):
-        pass
+    parser = argparse.ArgumentParser(
+        prog="pyst",
+        description="This is a stress test tools.",
+    )
+    parser.add_argument("-X", type=str, default="GET", help="request methods.")
+    parser.add_argument("-H", action="append", default=[],
+                        help="request headers. use it like `Content-Type:application/json`")
+    parser.add_argument("-d", type=str, default="", help="request body.")
+    parser.add_argument("--timeout", type=int, default=8, help="connect timeout.")
+    parser.add_argument("--concurrent", type=int, default=10, help="stress test concurrent.")
+    parser.add_argument("--duration", type=int, default=60, help="stress test duration.")
+    parser.add_argument("--equalStatus", type=int, default=200, help="check response status.")
+    parser.add_argument("--equalBodyStr", type=str, help="check response body value.")
+    parser.add_argument("--equalJson", action="append", help="check json response. use it like `data.filed==<str:ok>`")
+    parser.add_argument("uri", type=str, help="request uri.")
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            withTraceback().error(exc_val)
-            if self.callback:
-                try:
-                    self.callback(exc_val)
-                except:
-                    withTraceback().error(exc_val)
-        return True
+    args = parser.parse_args()
 
-
-class WithCallback(withCallback):
-    pass
+    stress(args.X, args.uri, args.H, args.d, args.timeout, args.concurrent, args.duration,
+           args.equalStatus, args.equalBodyStr, args.equalJson)

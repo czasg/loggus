@@ -44,7 +44,7 @@ setup(
     url='https://github.com/CzaOrz/loggus',
     packages=find_packages(),
     entry_points={
-        'console_scripts': ['loggus = loggus:execute', 'pyut = loggus:pyut']
+        'console_scripts': ['loggus = loggus:execute', 'pyut = loggus:pyut', 'pyst = loggus:pyst']
     },
     install_requires=[
         "colorama",
