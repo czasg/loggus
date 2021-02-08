@@ -1,7 +1,4 @@
 # coding: utf-8
-__author__ = "https://github.com/CzaOrz"
-__version__ = "0.0.18"
-
 import re
 import sys
 import json
@@ -577,6 +574,8 @@ class WithCallback(withCallback):
 def execute():
     import argparse
 
+    from loggus.pci import __author__, __version__
+
     WithFields({
         "author": __author__,
         "version": __version__,
@@ -592,62 +591,3 @@ def execute():
     )
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.print_help()
-
-
-def pyut():
-    import argparse
-
-    from loggus.unit_test import init, create, scan, delete
-
-    parser = argparse.ArgumentParser(
-        prog="pyut",
-        description="This is a unittest tools like go test.",
-    )
-    parser.add_argument("-i", "--init", action="store_true", help="init a unittest.yaml for project.")
-    parser.add_argument("-c", "--create", type=str, help="create a unit test file for a py-file.")
-    parser.add_argument("-t", "--test", action="store_true", help="start a unit test.")
-    parser.add_argument("-s", "--save", action="store_true", help="save reports when start a unit test.")
-    parser.add_argument("--xml", action="store_true", help="if `-s`, then generate a xml report after unit test.")
-    parser.add_argument("--html", action="store_true", help="if `-s`, then generate a html report after unit test.")
-    parser.add_argument("--delete", action="store_true",
-                        help="delete all test files, use it when you packages such like Dockerfile.")
-
-    args = parser.parse_args()
-
-    if args.init:
-        init()
-    elif args.create:
-        create(args.create)
-    elif args.test:
-        scan(args.save, args.xml, args.html)
-    elif args.delete:
-        delete()
-    else:
-        parser.print_help()
-
-
-def pyst():
-    import argparse
-
-    from loggus.stress_test import stress
-
-    parser = argparse.ArgumentParser(
-        prog="pyst",
-        description="This is a stress test tools.",
-    )
-    parser.add_argument("-X", type=str, default="GET", help="request methods.")
-    parser.add_argument("-H", action="append", default=[],
-                        help="request headers. use it like `Content-Type:application/json`")
-    parser.add_argument("-d", type=str, default="", help="request body.")
-    parser.add_argument("--timeout", type=int, default=8, help="connect timeout.")
-    parser.add_argument("--concurrent", type=int, default=10, help="stress test concurrent.")
-    parser.add_argument("--duration", type=int, default=60, help="stress test duration.")
-    parser.add_argument("--equalStatus", type=int, default=200, help="check response status.")
-    parser.add_argument("--equalBodyStr", type=str, help="check response body value.")
-    parser.add_argument("--equalJson", action="append", help="check json response. use it like `data.filed==<str:ok>`")
-    parser.add_argument("uri", type=str, help="request uri.")
-
-    args = parser.parse_args()
-
-    stress(args.X, args.uri, args.H, args.d, args.timeout, args.concurrent, args.duration,
-           args.equalStatus, args.equalBodyStr, args.equalJson)

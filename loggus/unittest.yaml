@@ -2,4 +2,4 @@ version: beta
 kind: unittest
 metadata:
   project:
-    name: stress_test
+    name: loggus
