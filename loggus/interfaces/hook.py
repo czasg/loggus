@@ -1,3 +1,6 @@
+__all__ = "IHook",
+
+
 class IHookMetaClass(type):
 
     def __new__(cls, name: str, bases: tuple, attrs: dict):

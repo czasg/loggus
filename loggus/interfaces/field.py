@@ -1,26 +1,38 @@
-from types import CodeType
+from loggus.interfaces.entry import IEntry
 
 __all__ = "IField",
 
 
-class IFieldMetaClass(type):
+class IField:
+    NeedFrame: bool
 
-    def __new__(cls, name: str, bases: tuple, attrs: dict):
-        if bases:
-            if IField not in bases:
-                raise Exception(f"please ensure `{name}` implemented the interface of `loggus.interfaces.IField`")
-            if "GetResolve" not in attrs:
-                raise Exception(f"please ensure `{name}` implemented the function of `Resolve`")
-            if "DropResolve" not in attrs:
-                raise Exception(f"please ensure `{name}` implemented the function of `Resolve`")
-        return type.__new__(cls, name, bases, attrs)
-
-
-class IField(metaclass=IFieldMetaClass):
-    NeedFrame = False
-
-    def GetResolve(self, fields: dict, frame: CodeType = None):
+    @property
+    def fieldKey(self):
         raise NotImplementedError
 
-    def DropResolve(self, fields: dict, frame: CodeType = None):
+    def FillResolve(self, entry: IEntry):
+        raise NotImplementedError
+
+    def DropResolve(self, entry: IEntry):
+        raise NotImplementedError
+
+
+class NotNeedFrame(IField):
+    NeedFrame = False
+
+    def FillResolve(self, entry: IEntry):
+        entry.fields[self.fieldKey] = entry.fields.get(self.fieldKey, "undefined")
+        return f""
+
+    def DropResolve(self, entry: IEntry):
+        raise NotImplementedError
+
+
+class NeedFrame(IField):
+    NeedFrame = True
+
+    def FillResolve(self, entry: IEntry):
+        raise NotImplementedError
+
+    def DropResolve(self, entry: IEntry):
         raise NotImplementedError

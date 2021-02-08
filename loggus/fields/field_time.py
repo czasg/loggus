@@ -1,4 +1,3 @@
-from types import CodeType
 from datetime import datetime
 from loggus.interfaces.field import IField
 
@@ -9,8 +8,8 @@ KEY = "time"
 
 class FieldTime(IField):
 
-    def GetResolve(self, fields: dict, frame: CodeType = None):
-        return f'{KEY}="{fields.get(KEY, datetime.now())}"'
+    def GetResolve(self, entry):
+        return f'{KEY}="{entry.fields.get(KEY, datetime.now())}"'
 
-    def DropResolve(self, fields: dict, frame: CodeType = None):
-        return f'{KEY}="{fields.pop(KEY, datetime.now())}"'
+    def DropResolve(self, entry):
+        return f'{KEY}="{entry.fields.pop(KEY, datetime.now())}"'

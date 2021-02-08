@@ -1,17 +1,6 @@
 # coding: utf-8
-import re
-import sys
-import json
-import inspect
-import logging
-import traceback
-import contextlib
 
-from typing import Any, List
-from copy import deepcopy
-from datetime import datetime
-
-from loggus.level import *
+from loggus.utils.level import *
 from loggus.logger import *
 
 
@@ -71,6 +60,12 @@ class Entry:
         return self.withCallback(callback)
 
     def log(self, level: int, *args: Any) -> None:
+        """
+        ensure fields is a Separate Dict Objects
+        :param level:
+        :param args:
+        :return:
+        """
         try:
             fields = deepcopy(self.fields)
         except:

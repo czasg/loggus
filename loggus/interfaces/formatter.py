@@ -1,3 +1,6 @@
+__all__ = "IFormatter",
+
+
 class IFormatterMetaClass(type):
 
     def __new__(cls, name: str, bases: tuple, attrs: dict):
