@@ -5,35 +5,75 @@ __version__ = "0.0.18"
 import re
 import sys
 import json
+import inspect
 import logging
 import traceback
 import contextlib
 
-from typing import Any
+from typing import Any, List
 from copy import deepcopy
 from datetime import datetime
 
+# regex for see good.
 regex = re.compile("[^a-zA-Z0-9]")
+# formatter object
 TextFormatter: object = object()
 JsonFormatter: object = object()
+
+
+# msg field key
+class FieldKey:
+
+    def __init__(self, name, default):
+        self.name = name
+        self.default = default
+
+    def GetDefault(self):
+        if inspect.isfunction(self.default):
+            return self.default()
+        else:
+            return self.default
+
+    def GetJsonValue(self):
+        return
+
+    def GetTextValue(self, fields: dict):
+        value = fields.pop(self.name, None)
+        if value is None:
+            value = self.GetDefault()
+        if regex.search(f"{value}"):
+            value = f"\"{value}\""
+        return f"{self.name}={value} "
+
+
+FieldKeyTime: object = FieldKey('time', datetime.now)
+FieldKeyLevel: object = FieldKey("level", "undefined")
+FieldKeyMsg: object = FieldKey("msg", "undefined")
+FieldKeyFuncName: object = FieldKey("funcName", "undefined")
+FieldKeyLineNo: object = FieldKey("lineNo", "undefined")
+FieldKeyFile: object = FieldKey("file", "undefined")
+# level
 DEBUG: int = logging.DEBUG
 INFO: int = logging.INFO
 WARNING: int = logging.WARNING
 ERROR: int = logging.ERROR
 PANIC: int = logging.FATAL
-DEBUG_COLOR = "\033[1;37m{}\033[0m"
-INFO_COLOR = "\033[1;32m{}\033[0m"
-WARNING_COLOR = "\033[1;33m{}\033[0m"
-ERROR_COLOR = "\033[1;31m{}\033[0m"
-PANIC_COLOR = "\033[1;36m{}\033[0m"
-LEVEL_MAP = {
+# level color
+DEBUG_COLOR: str = "\033[1;37m{}\033[0m"
+INFO_COLOR: str = "\033[1;32m{}\033[0m"
+WARNING_COLOR: str = "\033[1;33m{}\033[0m"
+ERROR_COLOR: str = "\033[1;31m{}\033[0m"
+PANIC_COLOR: str = "\033[1;36m{}\033[0m"
+# level map
+LEVEL_MAP: dict = {
     DEBUG: "debug",
     INFO: "info",
     WARNING: "warning",
     ERROR: "error",
     PANIC: "panic",
 }
-COLOR_LEVEL_MAP = {
+# color map
+COLOR_LEVEL_MAP: dict = {
     DEBUG: DEBUG_COLOR.format(LEVEL_MAP[DEBUG]),
     INFO: INFO_COLOR.format(LEVEL_MAP[INFO]),
     WARNING: WARNING_COLOR.format(LEVEL_MAP[WARNING]),
@@ -46,6 +86,15 @@ if sys.platform == "win32":
     import colorama
 
     colorama.init(autoreset=True)
+
+if hasattr(sys, '_getframe'):
+    currentframe = lambda: sys._getframe(3)
+else:
+    def currentframe():
+        try:
+            raise Exception
+        except Exception:
+            return sys.exc_info()[2].tb_frame.f_back
 
 
 # json encoder:
@@ -93,9 +142,10 @@ class IHook(metaclass=IHookMetaClass):
 # if you want to split the rule of logger, you can new one also.
 class Logger:
 
-    def __init__(self, out: Any = None, formatter: Any = None, level: int = None):
+    def __init__(self, out: Any = None, formatter: Any = None, level: int = None, fields: List[object] = None):
         self.out = out or sys.stdout
         self.formatter = formatter or TextFormatter
+        self.fields = fields or [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
         self.level = level or INFO
         self.color_switch = True
         self.hooks = {
@@ -129,6 +179,15 @@ class Logger:
     def IsLevelEnabled(self, level: int) -> bool:
         return level >= self.level
 
+    def SetFields(self, fields: list):
+        self.fields = fields
+
+    def GetFieldsOutput(self, fields: dict):
+        output = ""
+        for fieldKey in self.fields:  # type: FieldKey
+            output += fieldKey.GetValue(fields)
+        return output
+
     def Format(self, level: int, fields: dict) -> None:
         if self.formatter is JsonFormatter:
             self.JsonFormat(level, fields)
@@ -145,17 +204,8 @@ class Logger:
         self.FireHooks(level, out)
 
     def TextFormat(self, level: int, fields: dict):
-        _time = fields.pop("time", datetime.now())
-        _level = fields.pop("level", "undefined")
-        _msg = f"""{fields.pop("msg", "empty")}"""
-        if regex.search(_msg):
-            _msg = f"\"{_msg}\""
-        out = f"time=\"{_time}\" level={_level} msg={_msg}"
-        error = fields.pop("error", None)
-        if error is not None:
-            out = f"{out} error=\"[####@\n{error}\n@####]\" "
+        out = self.GetFieldsOutput(fields)
         for key, value in fields.items():
-            out += " "
             if isinstance(value, str):
                 out += f"{key}=\"{value}\"" if regex.search(value) else f"{key}={value}"
             elif isinstance(value, Exception):
@@ -164,6 +214,7 @@ class Logger:
                 out += f"{key}=\"{value}\""
             else:
                 out += f"{key}={value}"
+            out += " "
         out = f"{out}\n"
         self.Write(out)
         self.FireHooks(level, out)
