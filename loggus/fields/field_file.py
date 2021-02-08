@@ -7,6 +7,7 @@ KEY = "file"
 
 
 class FieldFile(IField):
+    NeedFrame = True
 
     def GetResolve(self, fields: dict, frame: CodeType = None):
         fields[KEY] = frame.co_name

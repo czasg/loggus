@@ -7,6 +7,7 @@ KEY = "lineNo"
 
 
 class FieldLineNo(IField):
+    NeedFrame = True
 
     def GetResolve(self, fields: dict, frame: CodeType = None):
         fields[KEY] = frame.co_name
