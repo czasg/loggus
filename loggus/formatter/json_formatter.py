@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from loggus.interfaces.formatter import IFormatter
 from loggus.interfaces.field import IField
+from loggus.interfaces.entry import IEntry
 
 __all__ = "JsonFormatter",
 
@@ -24,9 +25,11 @@ class ForcedEncoder(json.JSONEncoder):
 
 class JsonFormatter(IFormatter):
 
-    def Format(self, entry) -> str:
-        output = ""
+    def Format(self, entry: IEntry) -> str:
         for fieldKey in entry.logger.fieldKeys:  # type: IField
-            fieldKey.GetResolve(entry)
-
+            fieldKey.ResolveIn(entry)
+        try:
+            output = json.dumps(entry.fields, ensure_ascii=False, cls=PrettyEncoder)
+        except:
+            output = json.dumps(entry.fields, ensure_ascii=False, cls=ForcedEncoder)
         return output

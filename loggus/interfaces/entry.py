@@ -1,8 +1,9 @@
-from types import CodeType
-from loggus.interfaces.logger import IHook
+# coding: utf-8
+from loggus.interfaces.frame import IFrame
+from loggus.interfaces.logger import ILogger
 
 
 class IEntry:
-    logger: IHook
+    logger: ILogger
     fields: dict
-    frame: CodeType
+    frame: IFrame

@@ -197,3 +197,5 @@ class Logger:
     def Panic(self, *args: Any) -> None:
         entry = self.NewEntry()
         entry.Panic(*args)
+
+_logger = Logger()

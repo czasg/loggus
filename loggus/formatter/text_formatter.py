@@ -9,8 +9,8 @@ class TextFormatter(IFormatter):
     def Format(self, entry) -> str:
         output = ""
         for fieldKey in entry.logger.fieldKeys:  # type: IField
-            output += fieldKey.DropResolve(entry)
+            output += fieldKey.ResolveOut(entry)
             output += " "
         for key, value in entry.fields.items():
             output += f"{key}={value}"
-        return output
+        return f"{output}\n"

@@ -1,7 +1,62 @@
 # coding: utf-8
-
+import os
 from loggus.utils.level import *
 from loggus.logger import *
+
+from loggus.interfaces.frame import IFrame
+from loggus.interfaces.logger import ILogger
+from loggus.logger import _logger
+
+from loggus.fields.field_level import KEY as LEVEL_KEY
+from loggus.fields.field_time import KEY as TIME_KEY
+from loggus.fields.field_msg import KEY as MSG_KEY
+
+# from loggus.fields.field_level import KEY
+# from loggus.fields.field_level import KEY
+# from loggus.fields.field_level import KEY
+
+__all__ = "Entry",
+
+if hasattr(sys, '_getframe'):
+    currentframe = lambda: sys._getframe(3)
+else:
+    def currentframe():
+        try:
+            raise Exception
+        except Exception:
+            return sys.exc_info()[2].tb_frame.f_back
+_srcfile = os.path.normcase(currentframe.__code__.co_filename)
+
+from collections import namedtuple
+
+
+def findTest():
+    f = currentframe()
+    if f is not None:
+        f = f.f_back
+    rv = "(unknown file)", 0, "(unknown function)", None
+    while hasattr(f, "f_code"):
+        co = f.f_code
+        filename = os.path.normcase(co.co_filename)
+        if filename == _srcfile:
+            f = f.f_back
+            continue
+        sinfo = None
+        rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
+        break
+    return rv
+
+
+def NewEntry(logger: ILogger = None, fields=None):
+    entry = Entry(logger or _logger)
+    if fields:
+        try:
+            fields = deepcopy(fields)
+        except:
+            fields = {f"{key}": f"{value}" for key, value in fields.items()}
+        finally:
+            entry.fields = fields
+    return entry
 
 
 # An entry is the final or intermediate logging entry. It contains all the fields,
@@ -9,12 +64,13 @@ from loggus.logger import *
 # these objects can be reused and passed around as much as you wish to avoid field duplication.
 class Entry:
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: ILogger):
         self.logger = logger
         self.fields = dict()
+        self.frame: IFrame  # judge on logger.frame
 
     def withField(self, key: Any, value: Any, color: str = None):
-        if color and self.logger.ColorSwitch and \
+        if color and self.logger.colorSwitch and \
                 color in (DEBUG_COLOR, INFO_COLOR, WARNING_COLOR, ERROR_COLOR, PANIC_COLOR):
             return self.withFields({key: color.format(value)})
         return self.withFields({key: value})
@@ -28,8 +84,9 @@ class Entry:
         except:
             newFields = {f"{key}": f"{value}" for key, value in self.fields.items()}
         newFields.update(fields)
-        self.fields = newFields
-        return self
+        entry = NewEntry(self.logger)
+        entry.fields = newFields
+        return entry
 
     def WithFields(self, fields: dict):
         return self.withFields(fields)
@@ -66,16 +123,13 @@ class Entry:
         :param args:
         :return:
         """
-        try:
-            fields = deepcopy(self.fields)
-        except:
-            fields = {f"{key}": f"{value}" for key, value in self.fields.items()}
-        fields.update({
-            "time": datetime.now(),
-            "level": (COLOR_LEVEL_MAP if self.logger.ColorSwitch else LEVEL_MAP).get(level, "undefined"),
-            "msg": " ".join([f"{arg}" for arg in args]),
+        entry = NewEntry(self.logger, self.fields)
+        entry.fields.update({
+            LEVEL_KEY: level,
+            MSG_KEY: " ".join([f"{arg}" for arg in args]),
         })
-        self.logger.Format(level, fields)
+        output = entry.logger.formatter.Format(entry)
+        entry.logger.out.write(output)
 
     def Log(self, level: int, *args: Any):
         if self.logger.IsLevelEnabled(level):

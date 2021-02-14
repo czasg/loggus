@@ -3,15 +3,14 @@ from loggus.interfaces.entry import IEntry
 
 __all__ = "KEY", "FieldFile"
 
-KEY = "file"
+KEY = "FilePath"
 
 
 class FieldFile(IField):
-    NeedFrame = True
 
-    def GetResolve(self, entry: IEntry):
-        entry.fields[KEY] = entry.frame.co_name
-        return f'{KEY}={entry.frame.co_filename}'
+    def ResolveIn(self, entry: IEntry):
+        entry.fields[KEY] = entry.frame.FilePath
+        return f'{KEY}="{entry.frame.FilePath}"'
 
-    def DropResolve(self, entry: IEntry):
-        return f'{KEY}={entry.frame.co_filename}'
+    def ResolveOut(self, entry: IEntry):
+        return f'{KEY}="{entry.fields.pop(KEY, entry.frame.FilePath)}"'

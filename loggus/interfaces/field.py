@@ -3,36 +3,23 @@ from loggus.interfaces.entry import IEntry
 __all__ = "IField",
 
 
-class IField:
-    NeedFrame: bool
+class IFieldMetaClass(type):
 
-    @property
-    def fieldKey(self):
+    def __new__(cls, name: str, bases: tuple, attrs: dict):
+        if bases:
+            if IField not in bases:
+                raise Exception(f"please ensure `{name}` implemented the interface of `loggus.interfaces.IField`")
+            if "ResolveIn" not in attrs:
+                raise Exception(f"please ensure `{name}` implemented the function of `ResolveIn`")
+            if "ResolveOut" not in attrs:
+                raise Exception(f"please ensure `{name}` implemented the function of `ResolveOut`")
+        return type.__new__(cls, name, bases, attrs)
+
+
+class IField(metaclass=IFieldMetaClass):
+
+    def ResolveIn(self, entry: IEntry):
         raise NotImplementedError
 
-    def FillResolve(self, entry: IEntry):
-        raise NotImplementedError
-
-    def DropResolve(self, entry: IEntry):
-        raise NotImplementedError
-
-
-class NotNeedFrame(IField):
-    NeedFrame = False
-
-    def FillResolve(self, entry: IEntry):
-        entry.fields[self.fieldKey] = entry.fields.get(self.fieldKey, "undefined")
-        return f""
-
-    def DropResolve(self, entry: IEntry):
-        raise NotImplementedError
-
-
-class NeedFrame(IField):
-    NeedFrame = True
-
-    def FillResolve(self, entry: IEntry):
-        raise NotImplementedError
-
-    def DropResolve(self, entry: IEntry):
+    def ResolveOut(self, entry: IEntry):
         raise NotImplementedError
