@@ -7,10 +7,13 @@ KEY = "FilePath"
 
 
 class FieldFile(IField):
+    key = "filePath"
 
-    def ResolveIn(self, entry: IEntry):
-        entry.fields[KEY] = entry.frame.FilePath
-        return f'{KEY}="{entry.frame.FilePath}"'
+    @classmethod
+    def ResolveIn(cls, entry: IEntry):
+        entry.fields[cls.key] = entry.frame.FilePath
+        return f'{cls.key}="{entry.frame.FilePath}"'
 
-    def ResolveOut(self, entry: IEntry):
-        return f'{KEY}="{entry.fields.pop(KEY, entry.frame.FilePath)}"'
+    @classmethod
+    def ResolveOut(cls, entry: IEntry):
+        return f'{cls.key}="{entry.fields.pop(cls.key, entry.frame.FilePath)}"'
