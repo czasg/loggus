@@ -1,6 +1,6 @@
 # coding: utf-8
-import os
 import sys
+import traceback
 
 from copy import deepcopy
 from _io import TextIOWrapper
@@ -131,6 +131,9 @@ class Logger:
     def withFields(self, fields: dict):
         entry = self.NewEntry()
         return entry.withFields(fields)
+
+    def withTraceback(self):
+        traceback.format_exc()
 
     def debug(self, *args):
         entry = self.NewEntry()
