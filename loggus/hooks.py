@@ -1,6 +1,9 @@
 # coding: utf-8
+from loggus.level import GetAllLevels
+
+
 def IsIHook(hook) -> bool:
-    return hook.__class__ is IHookMetaClass
+    return isinstance(hook, IHook)
 
 
 class IHookMetaClass(type):
@@ -20,6 +23,17 @@ class IHook(metaclass=IHookMetaClass):
 
     def GetLevels(self) -> list:
         raise NotImplementedError
+
+    def Fire(self, entry, level, msg, output) -> None:
+        raise NotImplementedError
+
+
+class FileHook(IHook):
+
+    
+
+    def GetLevels(self):
+        return GetAllLevels()
 
     def Fire(self, entry, level, msg, output) -> None:
         raise NotImplementedError
