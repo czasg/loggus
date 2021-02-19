@@ -87,7 +87,7 @@ class FieldKeyLineNo(IField):
 
     @classmethod
     def ResolveIn(cls, entry, level, msg):
-        raise NotImplementedError
+        entry.fields[cls.Key] = entry.frameLineNo
 
     @classmethod
     def ResolveOut(cls, entry, level, msg):
@@ -99,7 +99,7 @@ class FieldKeyFunc(IField):
 
     @classmethod
     def ResolveIn(cls, entry, level, msg):
-        raise NotImplementedError
+        entry.fields[cls.Key] = entry.frameFuncName
 
     @classmethod
     def ResolveOut(cls, entry, level, msg):
@@ -111,7 +111,7 @@ class FieldKeyFile(IField):
 
     @classmethod
     def ResolveIn(cls, entry, level, msg):
-        raise NotImplementedError
+        entry.fields[cls.Key] = entry.frameFilePath
 
     @classmethod
     def ResolveOut(cls, entry, level, msg):
