@@ -31,74 +31,88 @@ class IFieldMetaClass(type):
 class IField(metaclass=IFieldMetaClass):
     Key = None
 
-    def ResolveIn(self, entry, level, msg):
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
         raise NotImplementedError
 
-    def ResolveOut(self, entry, level, msg):
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
         raise NotImplementedError
 
 
 class FieldKeyTime(IField):
     Key = "time"
 
-    def ResolveIn(self, entry, level, msg):
-        entry.fields[self.Key] = f"{datetime.now()}"
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
+        entry.fields[cls.Key] = f"{datetime.now()}"
 
-    def ResolveOut(self, entry, level, msg):
-        entry.fields.pop(self.Key, None)
-        return f"{self.Key}=\"{datetime.now()}\""
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        entry.fields.pop(cls.Key, None)
+        return f"{cls.Key}=\"{datetime.now()}\""
 
 
 class FieldKeyLevel(IField):
     Key = "level"
 
-    def ResolveIn(self, entry, level, msg):
-        entry.fields[self.Key] = level.describe
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
+        entry.fields[cls.Key] = level.describe
 
-    def ResolveOut(self, entry, level, msg):
-        entry.fields.pop(self.Key, None)
-        return f"{self.Key}={level.describe}"
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        entry.fields.pop(cls.Key, None)
+        return f"{cls.Key}={level.describe}"
 
 
 class FieldKeyMsg(IField):
     Key = "msg"
 
-    def ResolveIn(self, entry, level, msg):
-        entry.fields[self.Key] = msg
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
+        entry.fields[cls.Key] = msg
 
-    def ResolveOut(self, entry, level, msg):
-        entry.fields.pop(self.Key, None)
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        entry.fields.pop(cls.Key, None)
         if regex.match(msg):
-            return f"{self.Key}={msg}"
+            return f"{cls.Key}={msg}"
         else:
-            return f"{self.Key}=\"{msg}\""
+            return f"{cls.Key}=\"{msg}\""
 
 
 class FieldKeyLineNo(IField):
     Key = "lineNo"
 
-    def ResolveIn(self, entry, level, msg):
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
         raise NotImplementedError
 
-    def ResolveOut(self, entry, level, msg):
-        raise NotImplementedError
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        return f"{cls.Key}={entry.frameLineNo}"
 
 
 class FieldKeyFunc(IField):
     Key = "funcName"
 
-    def ResolveIn(self, entry, level, msg):
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
         raise NotImplementedError
 
-    def ResolveOut(self, entry, level, msg):
-        raise NotImplementedError
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        return f"{cls.Key}={entry.frameFuncName}"
 
 
 class FieldKeyFile(IField):
     Key = "filePath"
 
-    def ResolveIn(self, entry, level, msg):
+    @classmethod
+    def ResolveIn(cls, entry, level, msg):
         raise NotImplementedError
 
-    def ResolveOut(self, entry, level, msg):
-        raise NotImplementedError
+    @classmethod
+    def ResolveOut(cls, entry, level, msg):
+        return f"{cls.Key}={entry.frameFilePath}"

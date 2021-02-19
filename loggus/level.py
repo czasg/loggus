@@ -33,6 +33,9 @@ class Level:
     def __le__(self, other):
         return self.value <= other.value
 
+    def __hash__(self):
+        return self.value
+
     def __str__(self):
         return self.describe
 
@@ -45,5 +48,5 @@ WARNING = Level("warning", 30, "\033[1;33m{}\033[0m")
 ERROR = Level("error", 40, "\033[1;31m{}\033[0m")
 PANIC = Level("panic", 50, "\033[1;36m{}\033[0m")
 if __name__ == '__main__':
-    a = {1:2, 3:4}
+    a = {1: 2, 3: 4}
     print(a.copy())

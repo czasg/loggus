@@ -29,8 +29,9 @@ class IFormatter(metaclass=IFormatterMetaClass):
 
 class TextFormatter(IFormatter):
 
-    def Format(self, entry, level: Level, msg: str) -> str:
-        output = " ".join([fieldKey.ResolveOut(entry, level, msg) for fieldKey in entry.fieldKeys])
+    @classmethod
+    def Format(cls, entry, level: Level, msg: str) -> str:
+        output = " ".join([fieldKey.ResolveOut(entry, level, msg) for fieldKey in entry.logger.fieldKeys])
         for key, value in entry.fields.items():
             if isinstance(value, str):
                 if regex.match(value):
@@ -46,5 +47,6 @@ class TextFormatter(IFormatter):
 
 class JsonFormatter(IFormatter):
 
-    def Format(self, entry, level, msg) -> str:
+    @classmethod
+    def Format(cls, entry, level, msg) -> str:
         raise NotImplementedError
