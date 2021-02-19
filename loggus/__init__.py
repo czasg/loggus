@@ -47,7 +47,7 @@ _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 
 class Logger:
-    out: TextIOWrapper = sys.stdout
+    stream: TextIOWrapper = sys.stdout
     formatter: IFormatter = TextFormatter
     fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
     needFrame: bool = False
@@ -118,39 +118,11 @@ class Logger:
         self.needFrame = True
 
     def Write(self, output: str) -> None:
-        self.out.write(output)
-        self.out.flush()
+        self.stream.write(output)
+        self.stream.flush()
 
     def NewEntry(self):
         return NewEntry(self)
-
-    def WithField(self, key, value, colorLevel=None):
-        entry = self.NewEntry()
-        return entry.WithField(key, value, colorLevel)
-
-    def WithFields(self, fields: dict):
-        entry = self.NewEntry()
-        return entry.WithFields(fields)
-
-    def Debug(self, *args):
-        entry = self.NewEntry()
-        entry.Debug(*args)
-
-    def Info(self, *args):
-        entry = self.NewEntry()
-        entry.Info(*args)
-
-    def Warning(self, *args):
-        entry = self.NewEntry()
-        entry.Warning(*args)
-
-    def Error(self, *args):
-        entry = self.NewEntry()
-        entry.Error(*args)
-
-    def Panic(self, *args):
-        entry = self.NewEntry()
-        entry.Panic(*args)
 
     def withField(self, key, value, colorLevel=None):
         entry = self.NewEntry()
@@ -217,12 +189,12 @@ class Entry:
     def __init__(self, logger: Logger):
         self.logger = logger
 
-    def WithField(self, key, value, colorLevel: Level = None):
+    def withField(self, key, value, colorLevel: Level = None):
         if colorLevel and self.logger.colorSwitch:
             value = colorLevel.toColor(value)
-        return self.WithFields({key: value})
+        return self.withFields({key: value})
 
-    def WithFields(self, fields: dict):
+    def withFields(self, fields: dict):
         if not isinstance(fields, dict):
             raise Exception(f"unsupported {type(fields)}")
         entry = NewEntry(self.logger, self.fields)
@@ -242,27 +214,6 @@ class Entry:
             self.log(level, msg)
             if level >= PANIC:
                 sys.exit(PANIC.value)
-
-    def Debug(self, *args):
-        self.Log(DEBUG, " ".join([f"{arg}" for arg in args]))
-
-    def Info(self, *args):
-        self.Log(INFO, " ".join([f"{arg}" for arg in args]))
-
-    def Warning(self, *args):
-        self.Log(WARNING, " ".join([f"{arg}" for arg in args]))
-
-    def Error(self, *args):
-        self.Log(ERROR, " ".join([f"{arg}" for arg in args]))
-
-    def Panic(self, *args):
-        self.Log(PANIC, " ".join([f"{arg}" for arg in args]))
-
-    def withField(self, key, value, colorLevel: Level = None):
-        return self.WithField(key, value, colorLevel)
-
-    def withFields(self, fields: dict):
-        return self.WithFields(fields)
 
     def debug(self, *args):
         self.Log(DEBUG, " ".join([f"{arg}" for arg in args]))
@@ -302,14 +253,6 @@ def withFields(fields: dict) -> Entry:
     return _entry.withFields(fields)
 
 
-def WithField(key, value, color: str = None) -> Entry:
-    return _entry.WithField(key, value, color)
-
-
-def WithFields(fields: dict) -> Entry:
-    return _entry.WithFields(fields)
-
-
 def debug(*args) -> None:
     entry = NewEntry()
     entry.debug(*args)
@@ -333,28 +276,3 @@ def error(*args) -> None:
 def panic(*args) -> None:
     entry = NewEntry()
     entry.panic(*args)
-
-
-def Debug(*args) -> None:
-    entry = NewEntry()
-    entry.Debug(*args)
-
-
-def Info(*args) -> None:
-    entry = NewEntry()
-    entry.Info(*args)
-
-
-def Warning(*args) -> None:
-    entry = NewEntry()
-    entry.Warning(*args)
-
-
-def Error(*args) -> None:
-    entry = NewEntry()
-    entry.Error(*args)
-
-
-def Panic(*args) -> None:
-    entry = NewEntry()
-    entry.Panic(*args)
