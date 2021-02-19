@@ -122,26 +122,87 @@ class Logger:
         self.out.flush()
 
     def NewEntry(self):
-        pass
+        return NewEntry(self)
 
-    def Debug(self):
-        pass
+    def WithField(self, key, value, colorLevel=None):
+        entry = self.NewEntry()
+        return entry.WithField(key, value, colorLevel)
 
-    def Info(self):
-        pass
+    def WithFields(self, fields: dict):
+        entry = self.NewEntry()
+        return entry.WithFields(fields)
 
-    def Warning(self):
-        pass
+    def Debug(self, *args):
+        entry = self.NewEntry()
+        entry.Debug(*args)
 
-    def Error(self):
-        pass
+    def Info(self, *args):
+        entry = self.NewEntry()
+        entry.Info(*args)
 
-    def Panic(self):
-        pass
+    def Warning(self, *args):
+        entry = self.NewEntry()
+        entry.Warning(*args)
+
+    def Error(self, *args):
+        entry = self.NewEntry()
+        entry.Error(*args)
+
+    def Panic(self, *args):
+        entry = self.NewEntry()
+        entry.Panic(*args)
+
+    def withField(self, key, value, colorLevel=None):
+        entry = self.NewEntry()
+        return entry.withField(key, value, colorLevel)
+
+    def withFields(self, fields: dict):
+        entry = self.NewEntry()
+        return entry.withFields(fields)
+
+    def debug(self, *args):
+        entry = self.NewEntry()
+        entry.debug(*args)
+
+    def info(self, *args):
+        entry = self.NewEntry()
+        entry.info(*args)
+
+    def warning(self, *args):
+        entry = self.NewEntry()
+        entry.warning(*args)
+
+    def error(self, *args):
+        entry = self.NewEntry()
+        entry.error(*args)
+
+    def panic(self, *args):
+        entry = self.NewEntry()
+        entry.panic(*args)
 
 
 def NewLogger():
     return Logger()
+
+
+def SetLevel(level: Level) -> None:
+    _logger.SetLevel(level)
+
+
+def SetFormatter(formatter: TextFormatter or JsonFormatter):
+    _logger.SetFormatter(formatter)
+
+
+def CloseColor():
+    _logger.colorSwitch = False
+
+
+def OpenColor():
+    _logger.colorSwitch = True
+
+
+def AddHook(*hooks):
+    _logger.AddHooks(*hooks)
 
 
 _logger = NewLogger()
@@ -197,6 +258,27 @@ class Entry:
     def Panic(self, *args):
         self.Log(PANIC, " ".join([f"{arg}" for arg in args]))
 
+    def withField(self, key, value, colorLevel: Level = None):
+        return self.WithField(key, value, colorLevel)
+
+    def withFields(self, fields: dict):
+        return self.WithFields(fields)
+
+    def debug(self, *args):
+        self.Log(DEBUG, " ".join([f"{arg}" for arg in args]))
+
+    def info(self, *args):
+        self.Log(INFO, " ".join([f"{arg}" for arg in args]))
+
+    def warning(self, *args):
+        self.Log(WARNING, " ".join([f"{arg}" for arg in args]))
+
+    def error(self, *args):
+        self.Log(ERROR, " ".join([f"{arg}" for arg in args]))
+
+    def panic(self, *args):
+        self.Log(PANIC, " ".join([f"{arg}" for arg in args]))
+
 
 def NewEntry(logger: Logger = _logger, fields=None):
     entry = Entry(logger)
@@ -207,3 +289,72 @@ def NewEntry(logger: Logger = _logger, fields=None):
             fields = {f"{key}": f"{value}" for key, value in fields.items()}
         entry.fields = fields
     return entry
+
+
+_entry = NewEntry(_logger)
+
+
+def withField(key, value, color: str = None) -> Entry:
+    return _entry.withField(key, value, color)
+
+
+def withFields(fields: dict) -> Entry:
+    return _entry.withFields(fields)
+
+
+def WithField(key, value, color: str = None) -> Entry:
+    return _entry.WithField(key, value, color)
+
+
+def WithFields(fields: dict) -> Entry:
+    return _entry.WithFields(fields)
+
+
+def debug(*args) -> None:
+    entry = NewEntry()
+    entry.debug(*args)
+
+
+def info(*args) -> None:
+    entry = NewEntry()
+    entry.info(*args)
+
+
+def warning(*args) -> None:
+    entry = NewEntry()
+    entry.warning(*args)
+
+
+def error(*args) -> None:
+    entry = NewEntry()
+    entry.error(*args)
+
+
+def panic(*args) -> None:
+    entry = NewEntry()
+    entry.panic(*args)
+
+
+def Debug(*args) -> None:
+    entry = NewEntry()
+    entry.Debug(*args)
+
+
+def Info(*args) -> None:
+    entry = NewEntry()
+    entry.Info(*args)
+
+
+def Warning(*args) -> None:
+    entry = NewEntry()
+    entry.Warning(*args)
+
+
+def Error(*args) -> None:
+    entry = NewEntry()
+    entry.Error(*args)
+
+
+def Panic(*args) -> None:
+    entry = NewEntry()
+    entry.Panic(*args)
