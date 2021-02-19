@@ -1,6 +1,8 @@
 # coding: utf-8
 import re
+import json
 
+from datetime import datetime
 from loggus.level import Level
 
 regex = re.compile("^[a-zA-Z0-9]*$")
@@ -27,6 +29,11 @@ class IFormatter(metaclass=IFormatterMetaClass):
         raise NotImplementedError
 
 
+#
+#  Text Formatter
+#
+
+
 class TextFormatter(IFormatter):
 
     @classmethod
@@ -45,8 +52,34 @@ class TextFormatter(IFormatter):
         return f"{output}\n"
 
 
+#
+#  Json Formatter
+#
+
+
+class PrettyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return str(obj)
+        return super().default(obj)
+
+
+# json encoder: forced every obj to str.
+class ForcedEncoder(json.JSONEncoder):
+
+    def default(self, obj) -> str:
+        return f"{obj}"
+
+
 class JsonFormatter(IFormatter):
 
     @classmethod
     def Format(cls, entry, level, msg) -> str:
-        raise NotImplementedError
+        for fieldKey in entry.logger.fieldKeys:
+            fieldKey.ResolveIn(entry, level, msg)
+        try:
+            output = json.dumps(entry.fields, ensure_ascii=False, cls=PrettyEncoder)
+        except:
+            output = json.dumps(entry.fields, ensure_ascii=False, cls=ForcedEncoder)
+        return f"{output}\n"
