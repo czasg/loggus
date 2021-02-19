@@ -21,5 +21,5 @@ class IHook(metaclass=IHookMetaClass):
     def GetLevels(self) -> list:
         raise NotImplementedError
 
-    def Fire(self, entry) -> None:
+    def Fire(self, entry, level, msg, output) -> None:
         raise NotImplementedError
