@@ -63,7 +63,7 @@ class FieldKeyLevel(IField):
     @classmethod
     def ResolveOut(cls, entry, level, msg):
         entry.fields.pop(cls.Key, None)
-        return f"{cls.Key}={level.describe}"
+        return f"{cls.Key}={level.color if entry.logger.colorSwitch else level.describe}"
 
 
 class FieldKeyMsg(IField):
