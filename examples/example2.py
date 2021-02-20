@@ -1,30 +1,18 @@
+import time
 import loggus
 
+from loggus.hooks import FileHook, RotatingFileHook, TimedRotatingFileHook
 
-class FileBeat(loggus.IHook):
 
-    def __init__(self):
-        self.o = open("cza.log", "a+", encoding="utf-8")
-
-    def GetLevels(self):
-        return [loggus.INFO, loggus.ERROR]
-
-    def ProcessMsg(self, msg):
-        self.o.write(msg)
-        self.o.flush()
-
-    def __del__(self):
-        self.o.close()
+def test():
+    for i in range(5):
+        loggus.info("hello world")
+        loggus.warning("hello world")
+        loggus.error("hello world")
+        time.sleep(3)
 
 
 if __name__ == '__main__':
-    loggus.AddHook(FileBeat())
-    loggus.info("hello info")
-    loggus.warning("hello warning")
-    loggus.error("hello error")
-    loggus.info("hello info")
-    loggus.warning("hello warning")
-    loggus.error("hello error")
-    loggus.info("hello info")
-    loggus.warning("hello warning")
-    loggus.error("hello error")
+    loggus.CloseColor()
+    loggus.AddHook(TimedRotatingFileHook("cza.log", when="s", interval=3))
+    test()

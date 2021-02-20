@@ -36,16 +36,13 @@ def find_version(*file_paths):
 
 setup(
     name='loggus',
-    version=find_version('loggus', '__init__.py'),
+    version=find_version('loggus', 'pci.py'),
     description="This is a log library, you can output json and care fields easy.",
     long_description="see https://github.com/CzaOrz/loggus",
     author='CzaOrz',
     author_email='972542644@qq.com',
     url='https://github.com/CzaOrz/loggus',
     packages=find_packages(),
-    entry_points={
-        'console_scripts': ['loggus = loggus:execute', 'pyut = loggus:pyut', 'pyst = loggus:pyst']
-    },
     install_requires=[
         "colorama",
         "coverage",
@@ -53,6 +50,5 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
     ],
 )
