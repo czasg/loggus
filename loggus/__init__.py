@@ -1,6 +1,7 @@
 # coding: utf-8
 import sys
 import traceback
+import contextlib
 
 from copy import deepcopy
 from _io import TextIOWrapper
@@ -132,8 +133,13 @@ class Logger:
         entry = self.NewEntry()
         return entry.withFields(fields)
 
-    def withTraceback(self):
-        traceback.format_exc()
+    def withFieldTrace(self):
+        entry = self.NewEntry()
+        return entry.withFieldTrace()
+
+    def withTraceback(self, callback=None, *args, **kwargs):
+        entry = self.NewEntry()
+        return entry.withTraceback(callback, *args, **kwargs)
 
     def debug(self, *args):
         entry = self.NewEntry()
@@ -204,6 +210,21 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
+    def withFieldTrace(self):
+        return self.withField("traceback", traceback.format_exc().strip(), ERROR)
+
+    @contextlib.contextmanager
+    def withTraceback(self, callback=None, *args, **kwargs):
+        try:
+            yield
+        except Exception as e:
+            if callback:
+                try:
+                    callback(e, *args, **kwargs)
+                except:
+                    pass
+            self.withFieldTrace().error("an error occurred.")
+
     def log(self, level: Level, msg: str):
         entry = NewEntry(self.logger, self.fields)
         if entry.logger.needFrame:
@@ -245,15 +266,20 @@ def NewEntry(logger: Logger = _logger, fields=None):
     return entry
 
 
-_entry = NewEntry(_logger)
-
-
 def withField(key, value, color: str = None) -> Entry:
-    return _entry.withField(key, value, color)
+    return NewEntry().withField(key, value, color)
 
 
 def withFields(fields: dict) -> Entry:
-    return _entry.withFields(fields)
+    return NewEntry().withFields(fields)
+
+
+def withFieldTrace():
+    return NewEntry().withFieldTrace()
+
+
+def withTraceback(callback=None, *args, **kwargs):
+    return NewEntry().withTraceback(callback, *args, **kwargs)
 
 
 def debug(*args) -> None:

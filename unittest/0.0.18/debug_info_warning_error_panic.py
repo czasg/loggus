@@ -5,7 +5,7 @@ def test_logger():
     loggus.SetLevel(loggus.DEBUG)
     loggus.debug("test")
     loggus.withFields({"type": "info"}).info("test")
-    loggus.withFields({"type": "warning"}).warning("test")
+    loggus.withFields({"type": "warning"}).withFields({"func": "main"}).warning("test")
     loggus.error("test")
 
     logger = loggus.NewLogger()
