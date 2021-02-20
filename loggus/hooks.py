@@ -121,6 +121,8 @@ class TimedRotatingFileHook(RotatingFileHook):
         else:
             current = int(time.time())
         self.nextRolloverAt = self.NextRollover(current)
+        # TODO: DoRollover Exists Some Bugs.
+        raise Exception("TimedRotatingFileHook.DoRollover Exists Some Bugs.")
 
     def NextRollover(self, current):
         return current + self.interval
