@@ -184,13 +184,13 @@ _logger = NewLogger()
 
 
 class Entry:
-    fields = {}
-    frameFuncName = None
-    frameLineNo = None
-    frameFilePath = None
 
     def __init__(self, logger: Logger):
         self.logger = logger
+        self.fields = {}
+        self.frameFuncName = None
+        self.frameLineNo = None
+        self.frameFilePath = None
 
     def withField(self, key, value, colorLevel: Level = None):
         if colorLevel and self.logger.colorSwitch:
