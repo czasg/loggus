@@ -174,6 +174,22 @@ def SetFormatter(formatter: TextFormatter or JsonFormatter):
     _logger.SetFormatter(formatter)
 
 
+def OpenFieldKeyFunc():
+    _logger.OpenFieldKeyFunc()
+
+
+def OpenFieldKeyLineNo():
+    _logger.OpenFieldKeyLineNo()
+
+
+def OpenFieldKeyFile():
+    _logger.OpenFieldKeyFile()
+
+
+def SetFieldKeys(*fieldKeys):
+    _logger.SetFieldKeys(*fieldKeys)
+
+
 def CloseColor():
     _logger.colorSwitch = False
 
