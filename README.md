@@ -92,3 +92,20 @@ if __name__ == "__main__":
     loggus.AddHook(HttpHook())
     loggus.info("test")
 ```
+
+### Multiple logger
+We supported define multiple logger in the same project. like this:
+
+```py
+import loggus
+
+logger_a = loggus.GetLogger("logger_a")
+logger_b = loggus.GetLogger("logger_b")
+
+logger_a.AddHooks(RotatingFileHook(filename="./log_a.log"))
+logger_b.AddHooks(RotatingFileHook(filename="./log_b.log"))
+
+logger_a.info("There are something logs, will write to './log_a.log'.")
+logger_b.info("Something logs, will write to './log_b.log'.")
+
+```

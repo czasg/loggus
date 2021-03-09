@@ -1,16 +1,15 @@
 # coding: utf-8
+import contextlib
 import sys
 import traceback
-import contextlib
-
-from copy import deepcopy
 from _io import TextIOWrapper
+from copy import deepcopy
 from typing import List, Dict
 
-from loggus.level import *
-from loggus.hooks import *
 from loggus.fields import *
 from loggus.formatter import *
+from loggus.hooks import *
+from loggus.level import *
 
 # fix messy code when output color in win32.
 if sys.platform == "win32":
@@ -48,19 +47,20 @@ _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 
 class Logger:
-    stream: TextIOWrapper = sys.stdout
-    formatter: IFormatter = TextFormatter
-    fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
-    needFrame: bool = False
-    baseLevel: Level = INFO
-    colorSwitch: bool = True
-    hooks: Dict[Level, List[IHook]] = {
-        DEBUG: [],
-        INFO: [],
-        WARNING: [],
-        ERROR: [],
-        PANIC: [],
-    }
+    def __init__(self):
+        self.stream = sys.stdout
+        self.formatter = TextFormatter
+        self.fieldKeys = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
+        self.needFrame: bool = False
+        self.baseLevel: Level = INFO
+        self.colorSwitch: bool = True
+        self.hooks: Dict[Level, List[IHook]] = {
+            DEBUG: [],
+            INFO: [],
+            WARNING: [],
+            ERROR: [],
+            PANIC: [],
+        }
 
     def AddHooks(self, *hooks: List[IHook]) -> None:
         for hook in hooks:  # type: IHook
@@ -162,47 +162,66 @@ class Logger:
         entry.panic(*args)
 
 
+_loggers = {
+    "default": Logger(),
+}
+
+
+def GetLogger(logger_name="default"):
+    if logger_name not in _loggers:
+        _loggers[logger_name] = Logger()
+
+    return _loggers[logger_name]
+
+
 def NewLogger():
-    return Logger()
+    """ It will return default logger now. """
+    return GetLogger()
 
 
 def SetLevel(level: Level) -> None:
-    _logger.SetLevel(level)
+    for _, _logger in _loggers.items():
+        _logger.SetLevel(level)
 
 
 def SetFormatter(formatter: TextFormatter or JsonFormatter):
-    _logger.SetFormatter(formatter)
+    for _, _logger in _loggers.items():
+        _logger.SetFormatter(formatter)
 
 
 def OpenFieldKeyFunc():
-    _logger.OpenFieldKeyFunc()
+    for _, _logger in _loggers.items():
+        _logger.OpenFieldKeyFunc()
 
 
 def OpenFieldKeyLineNo():
-    _logger.OpenFieldKeyLineNo()
+    for _, _logger in _loggers.items():
+        _logger.OpenFieldKeyLineNo()
 
 
 def OpenFieldKeyFile():
-    _logger.OpenFieldKeyFile()
+    for _, _logger in _loggers.items():
+        _logger.OpenFieldKeyFile()
 
 
 def SetFieldKeys(*fieldKeys):
-    _logger.SetFieldKeys(*fieldKeys)
+    for _, _logger in _loggers.items():
+        _logger.SetFieldKeys(*fieldKeys)
 
 
 def CloseColor():
-    _logger.colorSwitch = False
+    for _, _logger in _loggers.items():
+        _logger.colorSwitch = False
 
 
 def OpenColor():
-    _logger.colorSwitch = True
+    for _, _logger in _loggers.items():
+        _logger.colorSwitch = True
 
 
 def AddHook(*hooks):
-    _logger.AddHooks(*hooks)
-
-
-_logger = NewLogger()
+    for _, _logger in _loggers.items():
+        _logger.AddHooks(*hooks)
 
 
 class Entry:
@@ -271,7 +290,7 @@ class Entry:
         self.Log(PANIC, " ".join([f"{arg}" for arg in args]))
 
 
-def NewEntry(logger: Logger = _logger, fields=None):
+def NewEntry(logger: Logger = GetLogger(), fields=None):
     entry = Entry(logger)
     if fields:
         try:
