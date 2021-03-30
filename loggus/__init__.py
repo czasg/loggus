@@ -48,9 +48,9 @@ _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 class Logger:
     def __init__(self):
-        self.stream = sys.stdout
-        self.formatter = TextFormatter
-        self.fieldKeys = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
+        self.stream: TextIOWrapper = sys.stdout
+        self.formatter: IFormatter = TextFormatter
+        self.fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
         self.needFrame: bool = False
         self.baseLevel: Level = INFO
         self.colorSwitch: bool = True
