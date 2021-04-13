@@ -1,5 +1,7 @@
 # coding: utf-8
+import re
 import sys
+import inspect
 import traceback
 import contextlib
 
@@ -19,17 +21,25 @@ if sys.platform == "win32":
     colorama.init(autoreset=True)
 
 if hasattr(sys, '_getframe'):
-    currentframe = lambda: sys._getframe(3)
+    currentframe2 = lambda: sys._getframe(2)
+    currentframe3 = lambda: sys._getframe(3)
 else:
-    def currentframe():
+    def currentframe2():
         try:
             raise Exception
         except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+            return sys.exc_info()[2].tb_frame.f_back.f_back
+
+
+    def currentframe3():
+        try:
+            raise Exception
+        except Exception:
+            return sys.exc_info()[2].tb_frame.f_back.f_back.f_back
 
 
 def FindCaller():
-    f = currentframe()
+    f = currentframe3()
     if f is not None:
         f = f.f_back
     rv = "(unknown file)", "(unknown line)", "(unknown function)"
@@ -44,6 +54,7 @@ def FindCaller():
     return rv
 
 
+autoFieldRegex = re.compile("withFieldsAuto\((.*?)\)").search
 _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 
@@ -132,6 +143,10 @@ class Logger:
     def withFields(self, fields: dict):
         entry = self.NewEntry()
         return entry.withFields(fields)
+
+    def withFieldAuto(self, *args):
+        entry = self.NewEntry()
+        return entry.withFieldAuto(*args)
 
     def withFieldTrace(self):
         entry = self.NewEntry()
@@ -226,6 +241,16 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
+    def withFieldAuto(self, *args):
+        if not args:
+            return self
+        code = inspect.getframeinfo(currentframe2()).code_context[0]
+        match = autoFieldRegex(code)
+        if not match:
+            self.debug(f"{code} [regex not match?]")
+            return self
+        return self.withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
+
     def withFieldTrace(self):
         return self.withField("traceback", traceback.format_exc().strip(), ERROR)
 
@@ -288,6 +313,17 @@ def withField(key, value, color: str = None) -> Entry:
 
 def withFields(fields: dict) -> Entry:
     return NewEntry().withFields(fields)
+
+
+def withFieldsAuto(*args) -> Entry:
+    if not args:
+        return NewEntry()
+    code = inspect.getframeinfo(currentframe2()).code_context[0]
+    match = autoFieldRegex(code)
+    if not match:
+        debug(f"{code} [regex not match?]")
+        return NewEntry()
+    return NewEntry().withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
 
 
 def withFieldTrace():
