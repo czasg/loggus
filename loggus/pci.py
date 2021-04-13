@@ -2,7 +2,7 @@
 # Project Configuration Information
 
 # project info
-__version__ = "0.0.20"
+__version__ = "0.0.21"
 __index_page__ = "https://github.com/CzaOrz/loggus"
 __doc_page__ = "https://github.com/CzaOrz/loggus/README.md"
 # author info
