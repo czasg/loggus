@@ -1,5 +1,4 @@
 # coding: utf-8
-import re
 import sys
 import inspect
 import traceback
@@ -54,24 +53,51 @@ def FindCaller():
     return rv
 
 
-autoFieldRegex = re.compile("withFieldsAuto\((.*?)\)").search
+def FindCallerParams(frame):
+    if inspect.istraceback(frame):
+        lineno = frame.tb_lineno
+        frame = frame.tb_frame
+    else:
+        lineno = frame.f_lineno
+    if not inspect.isframe(frame):
+        raise TypeError('{!r} is not a frame or traceback object'.format(frame))
+    start = lineno - 1
+    try:
+        lines, lnum = inspect.findsource(frame)
+    except OSError:
+        return ""
+    else:
+        start = max(0, min(start, len(lines) - 1))
+        codes = ""
+        for index in range(start, 0, -1):
+            line = lines[index]
+            codes = line + codes
+            if callerName in line:
+                break
+        return codes
+
+
+callerName = "withFieldsAuto"
+autoFieldRegex = re.compile(callerName + "\s*\((.*?)(?:$|\))", re.S).search
 _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 
 class Logger:
-    stream: TextIOWrapper = sys.stdout
-    formatter: IFormatter = TextFormatter
-    fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
-    needFrame: bool = False
-    baseLevel: Level = INFO
-    colorSwitch: bool = True
-    hooks: Dict[Level, List[IHook]] = {
-        DEBUG: [],
-        INFO: [],
-        WARNING: [],
-        ERROR: [],
-        PANIC: [],
-    }
+
+    def __init__(self):
+        self.stream: TextIOWrapper = sys.stdout
+        self.formatter: IFormatter = TextFormatter
+        self.fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
+        self.needFrame: bool = False
+        self.baseLevel: Level = INFO
+        self.colorSwitch: bool = True
+        self.hooks: Dict[Level, List[IHook]] = {
+            DEBUG: [],
+            INFO: [],
+            WARNING: [],
+            ERROR: [],
+            PANIC: [],
+        }
 
     def AddHooks(self, *hooks: List[IHook]) -> None:
         for hook in hooks:  # type: IHook
@@ -144,9 +170,9 @@ class Logger:
         entry = self.NewEntry()
         return entry.withFields(fields)
 
-    def withFieldAuto(self, *args):
+    def withFieldsAuto(self, *args):
         entry = self.NewEntry()
-        return entry.withFieldAuto(*args)
+        return entry.withFieldsAuto(*args)
 
     def withFieldTrace(self):
         entry = self.NewEntry()
@@ -241,10 +267,10 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
-    def withFieldAuto(self, *args):
+    def withFieldsAuto(self, *args):
         if not args:
             return self
-        code = inspect.getframeinfo(currentframe2()).code_context[0]
+        code = FindCallerParams(currentframe2())
         match = autoFieldRegex(code)
         if not match:
             self.debug(f"{code} [regex not match?]")
@@ -318,7 +344,7 @@ def withFields(fields: dict) -> Entry:
 def withFieldsAuto(*args) -> Entry:
     if not args:
         return NewEntry()
-    code = inspect.getframeinfo(currentframe2()).code_context[0]
+    code = FindCallerParams(currentframe2())
     match = autoFieldRegex(code)
     if not match:
         debug(f"{code} [regex not match?]")
