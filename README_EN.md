@@ -1,78 +1,115 @@
-## loggus
+# loggus
 
-This is a structured log library, you can pay more attention to each fields easy.
+This is a structured log library that makes parsing, subsequent processing, analysis, or querying of logs easy and efficient.
 
-> pip install loggus
+Because of the structure, it is very easy to support JSON style output.
 
-### Fields
-You are free to select fields for stitching.  
-default fields are `time`、`level`、`msg`  
-```shell script
->>> loggus.info("test")
-time="2021-02-20 21:48:23.832815" level=info msg=test
->>> entry = loggus.withFields({"type": "test"})
->>> entry.info("test")
-time="2021-02-20 21:48:23.832815" level=info msg=test type=test
->>> entry = entry.withFields({"from": "test"})
->>> entry.info("test")
-time="2021-02-20 21:48:23.832815" level=info msg=test type=test from=test
+
+
+> installation mode
+> PIP install loggus >= 0.0.21
+
+
+
+## `withFieldsAuto`
+
+Automatically find the name of the variable and map the value to Fields as follows:  
+The final mapping is: '{"packageName": "Pywss", "packageVersion": "0.0.21"}'  
+In this function, functions such as multiple calls and line wrapping are supported
+```python
+import loggus
+packageName = "Pywss"
+packageVersion = "0.0.21"
+loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
+# output log
+# time="2021-04-13 20:56:53.907202" level= INFO MSG ="0.0" packageName= "PyWSS packageText ="0.0.21"
 ```
 
-### FieldKey
-you can also choose other fields of `funcName`、`lineNo`、`filePath`  
-those fieldKeys belong `logger`, you can define `logger` with different fiedKeys.
-```shell script
->>> loggus.OpenFieldKeyFunc()
->>> loggus.OpenFieldKeyLineNo()
->>> loggus.OpenFieldKeyFile()
->>> loggus.info("test")
-time="2021-02-20 22:01:38.558551" level=info msg=test funcName=test lineNo=16 filePath=D:/workplace/loggus/examples/test.py
-```
-if you want free combination the default fields, use `loggus.SetFieldKeys`
-```shell script
->>> loggus.SetFieldKeys(loggus.FieldKeyTime, loggus.FieldKeyLevel, loggus.FieldKeyMsg, loggus.FieldKeyFunc, loggus.FieldKeyLineNo, loggus.FieldKeyFile)
->>> logger = loggus.NewLogger()
->>> logger.SetFieldKeys(loggus.FieldKeyTime, loggus.FieldKeyLevel)
+## `withFields`
+```python
+import loggus
+packageName = "Pywss"
+packageVersion = "0.0.21"
+loggus.withFields({" PackageName ": packageName," PackageVersion ": packageVersion}).info("0.0")
+# output log
+# time="2021-04-13 20:56:53.907202" level= INFO MSG ="0.0" packageName =" PyWSS packageText ="0.0.21"
 ```
 
-### Level
-There are five log levels about `DEBUG`、`INFO`、`WARNING`、`ERROR`、`PANIC`  
-```shell script
->>> loggus.SetLevel(loggus.DEBUG)
->>> loggus.SetLevel(loggus.INFO)
->>> loggus.SetLevel(loggus.WARNING)
->>> loggus.SetLevel(loggus.ERROR)
->>> loggus.SetLevel(loggus.PANIC)
->>> loggus.GetAllLevels()
-[debug, info, warning, error, panic]
+## Set the log level
+* `loggus.SetLevel(loggus.DEBUG)`
+* `loggus.SetLevel(loggus.INFO)`
+* `loggus.SetLevel(loggus.WARNING)`
+* `loggus.SetLevel(loggus.ERROR)`
+* `loggus.SetLevel(loggus.PANIC)`
+
+## Customize the output log color
+1. Turn off the log color: 'loggus.closecolor ()'  
+2, open the log color: 'loggus.opencolor ()'  
+In addition, users can customize the output color of the 'field' by 'loggus. Withfield'. There is no uniform color style in the 'JSON' style
+```python
+import loggus
+loggus.withField("Name", "logger", loggus.INFO).info("info color")
+loggus.withField("Name", "logger", loggus.WARNING).warning("warn color")
+loggus.withField("Name", "logger", loggus.ERROR).error("error color")
+loggus.withField("Name", "logger", loggus.PANIC).panic("panic color")
 ```
 
-### Formatter
-choose different Formatter to output text/json, default is `TextFormatter`
-```shell script
->>> loggus.SetFormatter(loggus.JsonFormatter)
->>> loggus.withFields({"type": "test"}).info("test")
-{"type": "test", "time": "2021-02-20 21:39:38.378230", "level": "info", "msg": "test"}
+## Enables JSON logging output
+The default style is' Text ', which can be changed to 'Json' using 'loggus. setFormatter' (loggus. jsonFormatter) '.
+* ` Text ` : ` loggus. TextFormatter `
+* ` Json ` : ` loggus. JsonFormatter `
+```python
+import loggus
+loggus.SetFormatter(loggus.JsonFormatter)
+packageName = "Pywss"
+PackageVersion = "0.0.21"
+loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
+# output log
+# {" packageName ":" Pywss ", "packageVersion" : "0.0.21", "time", "the 2021-04-13 21:17:17. 644317", "level" : "info", "MSG" : "0.0"}
 ```
 
-### Hook
-Hook should inherit from `loggus.hook.IHook`
-```shell script
->>> from loggus.hook import FileHook, RotatingFileHook
->>> logger = logger.NewLogger()
->>> logger.AddHook(FileHook("FileHook.log"))
->>> logger.info("test")
->>> logger = logger.NewLogger()
->>> logger.AddHook(RotatingFileHook("RotatingFileHook.log"))
->>> logger.info("test")
+## Match function name, line count, file name automatically  
+The default use of 'time', 'level' and 'MSG' is supported, and extensions to 'funcName', 'lineNo' and 'filePath' are also supported
+* Open the function name: 'loggus.OpenFieldKeyFunc()'
+* open the lines of: ` loggus. OpenFieldKeyLineNo ` ()
+* Open the file name: 'loggus.OpenFieldKeyFile()'
+```python
+import loggus
+loggus.OpenFieldKeyFunc()
+loggus.OpenFieldKeyLineNo()
+loggus.OpenFieldKeyFile()
+packageName = "Pywss"
+packageVersion = "0.0.21"
+loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
+# 日志输出
+# time="2021-04-13 21:23:50.113213" level=info msg="0.0" funcName=<module> lineNo=7 filePath=xxx.py packageName=Pywss packageVersion="0.0.21"
 ```
-you can also define a self-hook easy. just implement `GetLevels` and `Fire`  
-* GetLevels: trigger level.
-* Fire:
-    * entry: entry instance.
-    * level: loggus.Level.
-    * msg: original msg.
-    * output: final msg, end of `\n`
+
+## Customize output type
+The following six types of output are currently included, which can be matched by a free combination of 'loggus.SetFieldKeys'
+* 'loggus.FieldKeyTime', time
+* 'loggus.FieldKeyLevel', log level
+* 'loggus.FieldKeyMsg', log information
+* 'loggus.FieldKeyLineNo', number of rows executed
+* 'loggus. fieldKeyFunc', the name of the execution function
+* 'loggus.FieldKeyFile', the file name of the execution
+```python
+import loggus
+loggus.SetFieldKeys(loggus.FieldKeyMsg, loggus.FieldKeyLineNo)
+packageName = "Pywss"
+packageVersion = "0.0.21"
+loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
+# log output
+# msg="0.0" lineNo=5 packageName=Pywss packageVersion="0.0.21"
+```
+
+## Log hooks
+Currently support 'FileHook', 'RotatingFileHook' two hooks.  
+The hook needs to inherit from 'loggus.hook. Ihook'. It is very easy to develop a custom hook.  
+You need to implement two functions:
+* `GetLevels`
+* `Fire`
+Here is a simple HTTP hook
 ```python
 import loggus
 import requests
@@ -80,7 +117,7 @@ import requests
 from loggus.hooks import IHook
 
 class HttpHook(IHook):
-    
+
     def GetLevels(self):
         return [loggus.INFO]
 
