@@ -5,7 +5,6 @@ import traceback
 import contextlib
 
 from copy import deepcopy
-from _io import TextIOWrapper
 from typing import List, Dict
 
 from loggus.level import *
@@ -53,7 +52,11 @@ def FindCaller():
     return rv
 
 
-def FindCallerParams(frame):
+autoCallerName = "withFieldsAuto"
+autoFieldRegex = re.compile(autoCallerName + "\s*\((.*?)(?:$|\))", re.S).search
+
+
+def FindCallerAuto(frame):
     if inspect.istraceback(frame):
         lineno = frame.tb_lineno
         frame = frame.tb_frame
@@ -72,22 +75,48 @@ def FindCallerParams(frame):
         for index in range(start, 0, -1):
             line = lines[index]
             codes = line + codes
-            if callerName in line:
+            if autoCallerName in line:
                 break
         return codes
 
 
-callerName = "withFieldsAuto"
-autoFieldRegex = re.compile(callerName + "\s*\((.*?)(?:$|\))", re.S).search
+varCallerName = "withVariables"
+varFieldRegex = re.compile(varCallerName + "\s*\((.*?)(?:$|\))", re.S).search
+
+
+def FindCallerVariables(frame):
+    if inspect.istraceback(frame):
+        lineno = frame.tb_lineno
+        frame = frame.tb_frame
+    else:
+        lineno = frame.f_lineno
+    if not inspect.isframe(frame):
+        raise TypeError('{!r} is not a frame or traceback object'.format(frame))
+    start = lineno - 1
+    try:
+        lines, lnum = inspect.findsource(frame)
+    except OSError:
+        return ""
+    else:
+        start = max(0, min(start, len(lines) - 1))
+        codes = ""
+        for index in range(start, 0, -1):
+            line = lines[index]
+            codes = line + codes
+            if varCallerName in line:
+                break
+        return codes
+
+
 _srcfile = os.path.normcase(FindCaller.__code__.co_filename)
 
 
 class Logger:
 
     def __init__(self):
-        self.stream: TextIOWrapper = sys.stdout
-        self.formatter: IFormatter = TextFormatter
-        self.fieldKeys: List[IField] = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
+        self.stream = sys.stdout
+        self.formatter = TextFormatter
+        self.fieldKeys = [FieldKeyTime, FieldKeyLevel, FieldKeyMsg]
         self.needFrame: bool = False
         self.baseLevel: Level = INFO
         self.colorSwitch: bool = True
@@ -169,6 +198,10 @@ class Logger:
     def withFields(self, fields: dict):
         entry = self.NewEntry()
         return entry.withFields(fields)
+
+    def withVariables(self, *args):
+        entry = self.NewEntry()
+        return entry.withFieldsAuto(*args)
 
     def withFieldsAuto(self, *args):
         entry = self.NewEntry()
@@ -267,10 +300,20 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
+    def withVariables(self, *args):
+        if not args:
+            return self
+        code = FindCallerVariables(currentframe2())
+        match = varFieldRegex(code)
+        if not match:
+            self.debug(f"{code} [regex not match?]")
+            return self
+        return self.withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
+
     def withFieldsAuto(self, *args):
         if not args:
             return self
-        code = FindCallerParams(currentframe2())
+        code = FindCallerAuto(currentframe2())
         match = autoFieldRegex(code)
         if not match:
             self.debug(f"{code} [regex not match?]")
@@ -341,10 +384,21 @@ def withFields(fields: dict) -> Entry:
     return NewEntry().withFields(fields)
 
 
+def withVariables(*args) -> Entry:
+    if not args:
+        return NewEntry()
+    code = FindCallerVariables(currentframe2())
+    match = varFieldRegex(code)
+    if not match:
+        debug(f"{code} [regex not match?]")
+        return NewEntry()
+    return NewEntry().withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
+
+
 def withFieldsAuto(*args) -> Entry:
     if not args:
         return NewEntry()
-    code = FindCallerParams(currentframe2())
+    code = FindCallerAuto(currentframe2())
     match = autoFieldRegex(code)
     if not match:
         debug(f"{code} [regex not match?]")
