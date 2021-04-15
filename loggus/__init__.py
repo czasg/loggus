@@ -54,6 +54,7 @@ def FindCaller():
 
 autoCallerName = "withFieldsAuto"
 autoFieldRegex = re.compile(autoCallerName + "\s*\((.*?)(?:$|\))", re.S).search
+autoSubRegex = re.compile("[^a-zA-Z0-9.]").sub
 
 
 # TODO: How to auto parse fields from input， like `withFieldsAuto(self.getName(), self.getAge())`
@@ -202,7 +203,7 @@ class Logger:
 
     def withVariables(self, *args):
         entry = self.NewEntry()
-        return entry.withFieldsAuto(*args)
+        return entry.withVariables(*args)
 
     def withFieldsAuto(self, *args):
         entry = self.NewEntry()
@@ -319,7 +320,7 @@ class Entry:
         if not match:
             self.debug(f"{code} [regex not match?]")
             return self
-        return self.withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
+        return self.withFields(dict(zip([autoSubRegex("", field) for field in match.group(1).split(",")], args)))
 
     def withFieldTrace(self):
         return self.withField("traceback", traceback.format_exc().strip(), ERROR)
@@ -404,7 +405,7 @@ def withFieldsAuto(*args) -> Entry:
     if not match:
         debug(f"{code} [regex not match?]")
         return NewEntry()
-    return NewEntry().withFields(dict(zip([field.strip() for field in match.group(1).split(",")], args)))
+    return NewEntry().withFields(dict(zip([autoSubRegex("", field) for field in match.group(1).split(",")], args)))
 
 
 def withFieldTrace():
