@@ -6,7 +6,7 @@
 > 安装方式
 > pip install loggus >= 0.0.21
 
-## `withFieldsAuto`
+## `withVariables`
 自动查找变量的名字，并将值映射到fields中，如下：  
 `packageName`、`packageVersion`两个变量，最终映射为：`{"packageName": "Pywss", "packageVersion": "0.0.21"}`    
 在该函数中，支持多次调用和换行等功能
@@ -14,7 +14,7 @@
 import loggus
 packageName = "Pywss"
 packageVersion = "0.0.21"
-loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
+loggus.withVariables(packageName, packageVersion).info("0.0")
 # 输出日志
 # time="2021-04-13 20:56:53.907202" level=info msg="0.0" packageName=Pywss packageVersion="0.0.21"
 ```

@@ -56,6 +56,7 @@ autoCallerName = "withFieldsAuto"
 autoFieldRegex = re.compile(autoCallerName + "\s*\((.*?)(?:$|\))", re.S).search
 
 
+# TODO: How to auto parse fields from input， like `withFieldsAuto(self.getName(), self.getAge())`
 def FindCallerAuto(frame):
     if inspect.istraceback(frame):
         lineno = frame.tb_lineno
