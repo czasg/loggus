@@ -22,11 +22,16 @@ def IsIHook(hook) -> bool:
     return isinstance(hook, IHook)
 
 
+def SafeRemove(*files):
+    for filename in files:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+
 def SafeMoveFile(source, destination):
     if not os.path.exists(source):
         return
-    if os.path.exists(destination):
-        os.remove(destination)
+    SafeRemove(destination)
     os.rename(source, destination)
 
 
@@ -36,6 +41,13 @@ class IHook:
         raise NotImplementedError
 
     def Fire(self, entry, level, msg, output) -> None:
+        """
+        :param entry: loggus.entry instance
+        :param level: log level
+        :param msg: log msg, like `loggus.info("msgBody")`, so `msg` is "msgBody".
+        :param output: log line.
+        :return:
+        """
         raise NotImplementedError
 
 
@@ -43,6 +55,11 @@ class FileHook(IHook):
     stream = None
 
     def __init__(self, filename, mode="a", encoding="utf-8"):
+        """
+        :param filename: The file path.
+        :param mode:
+        :param encoding:
+        """
         self.filename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
@@ -63,6 +80,16 @@ class FileHook(IHook):
 class RotatingFileHook(FileHook):
 
     def __init__(self, filename, mode="a", encoding="utf-8", maxBytes=1024 * 64, backupCount=3):
+        """
+        :param filename: The file path.
+        :param mode:
+        :param encoding:
+        :param maxBytes: Rollover occurs whenever the current log file is nearly maxBytes in length.
+            If maxBytes is zero, rollover never occurs.
+        :param backupCount: If backupCount is >= 1, the system will successively create new files
+            with the same pathname as the base file, like "log.log"、"log.log.1"、"log.log.2"...
+            If backupCount is zero, create new files with the same pathname as the base file always.
+        """
         super(RotatingFileHook, self).__init__(filename, mode, encoding)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
@@ -74,15 +101,19 @@ class RotatingFileHook(FileHook):
         self.stream.flush()
 
     def NeedRollover(self, output) -> bool:
+        if self.maxBytes <= 0:
+            return False
         self.stream.seek(0, 2)
-        if self.stream.tell() + len(output) >= self.maxBytes:
-            return True
-        return False
+        return (self.stream.tell() + len(output)) >= self.maxBytes
 
     def DoRollover(self):
         if hasattr(self.stream, "close"):
             self.stream.close()
             self.stream = None
+        if self.backupCount < 1:
+            SafeRemove(self.filename)
+            self.stream = open(self.filename, mode=self.mode, encoding=self.encoding)
+            return
         for index in range(self.backupCount - 1, 0, -1):
             SafeMoveFile(f"{self.filename}.{index}", f"{self.filename}.{index + 1}")
         SafeMoveFile(self.filename, f"{self.filename}.1")
@@ -91,11 +122,22 @@ class RotatingFileHook(FileHook):
 
 class TimedRotatingFileHook(RotatingFileHook):
 
-    def __init__(self, filename, when="h", interval=1, mode="a", encoding="utf-8", maxBytes=1024 * 64, backupCount=3):
-        super(TimedRotatingFileHook, self).__init__(filename, mode, encoding, maxBytes, backupCount)
+    def __init__(self, filename, when="h", interval=1, mode="a", encoding="utf-8", backupCount=3):
+        """
+        :param filename: The file path.
+        :param when:
+            when="s", rollover occurs whenever interval seconds
+            when="m", rollover occurs whenever interval minutes
+            when="h", rollover occurs whenever interval hours
+            when="d", rollover occurs whenever interval days
+        :param interval:
+        :param mode:
+        :param encoding:
+        :param backupCount:
+        """
+        super(TimedRotatingFileHook, self).__init__(filename, mode, encoding, 0, backupCount)
         self.when = when.upper()
-        self.interval = interval
-
+        self.backupCount = backupCount
         if self.when == 'S':
             self.interval = 1  # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
@@ -114,36 +156,46 @@ class TimedRotatingFileHook(RotatingFileHook):
             self.extMatch = r"^\d{4}-\d{2}-\d{2}(\.\w+)?$"
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
+
         self.extMatch = re.compile(self.extMatch, re.ASCII)
-        self.interval = self.interval * interval  # multiply by units requested
+        self.interval = self.interval * interval
         if os.path.exists(self.filename):
             current = os.stat(self.filename)[ST_MTIME]
         else:
             current = int(time.time())
         self.nextRolloverAt = self.NextRollover(current)
-        # TODO: DoRollover Exists Some Bugs.
-        raise Exception("TimedRotatingFileHook.DoRollover Exists Some Bugs.")
 
-    def NextRollover(self, current):
+    def CheckFilesToDelete(self) -> list:
+        dirName, baseName = os.path.split(self.filename)
+        fileNames = os.listdir(dirName)
+        result = []
+        prefix = baseName + "."
+        plen = len(prefix)
+        for fileName in fileNames:
+            if fileName[:plen] == prefix:
+                suffix = fileName[plen:]
+                if self.extMatch.match(suffix):
+                    result.append(os.path.join(dirName, fileName))
+        if len(result) < self.backupCount:
+            result = []
+        else:
+            result.sort()
+            result = result[:len(result) - self.backupCount]
+        return result
+
+    def NextRollover(self, current) -> int:
         return current + self.interval
 
     def NeedRollover(self, output) -> bool:
-        if int(time.time()) >= self.nextRolloverAt:
-            return True
-        return False
+        return int(time.time()) >= self.nextRolloverAt
 
     def DoRollover(self):
         if hasattr(self.stream, "close"):
             self.stream.close()
             self.stream = None
 
-        nextRolloverAt = self.nextRolloverAt
-
-        for index in range(self.backupCount - 1, 0, -1):
-            previousFileName = f"{self.filename}.{time.strftime(self.suffix, time.localtime(nextRolloverAt - self.interval * index))}"
-            nextFileName = f"{self.filename}.{time.strftime(self.suffix, time.localtime(nextRolloverAt - self.interval * (index - 1)))}"
-            SafeMoveFile(previousFileName, nextFileName)
-            nextRolloverAt -= self.interval
-        SafeMoveFile(self.filename, f"{self.filename}.{time.strftime(self.suffix, time.localtime(nextRolloverAt))}")
+        backName = f"{self.filename}.{time.strftime(self.suffix, time.localtime(self.nextRolloverAt))}"
+        SafeMoveFile(self.filename, backName)
+        SafeRemove(*self.CheckFilesToDelete())
         self.stream = open(self.filename, mode=self.mode, encoding=self.encoding)
         self.nextRolloverAt = self.NextRollover(self.nextRolloverAt)
