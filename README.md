@@ -4,7 +4,7 @@
 由于采用结构化，因此可以非常简单的支持JSON样式输出。
 
 > 安装方式
-> pip install loggus >= 0.0.21
+> pip install loggus >= 0.0.23
 
 ## `withVariables`
 自动查找变量的名字，并将值映射到fields中，如下：  
@@ -99,7 +99,7 @@ loggus.withFieldsAuto(packageName, packageVersion).info("0.0")
 ```
 
 ## 日志钩子
-目前支持`FileHook`、`RotatingFileHook`两种钩子。
+目前支持`FileHook`、`RotatingFileHook`、`TimedRotatingFileHook`钩子。
 
 钩子需要从`loggus.hook.IHook`继承，可以非常简单的开发出自定义的钩子。
 需要实现两个函数：
@@ -124,4 +124,45 @@ class HttpHook(IHook):
 if __name__ == "__main__":
     loggus.AddHook(HttpHook())
     loggus.info("test")
+```
+
+#### FileHook
+```python
+import loggus
+
+from loggus.hooks import FileHook
+
+
+if __name__ == '__main__':
+    loggus.AddHook(FileHook("FileHook.log"))
+    for index in range(100):
+        loggus.info(index)
+```
+
+#### RotatingFileHook
+```python
+import loggus
+
+from loggus.hooks import RotatingFileHook
+
+
+if __name__ == '__main__':
+    loggus.AddHook(RotatingFileHook("RotatingFileHook.log", maxBytes=1024, backupCount=3))
+    for index in range(100):
+        loggus.info(index)
+```
+
+#### TimedRotatingFileHook
+```python
+import time
+import loggus
+
+from loggus.hooks import TimedRotatingFileHook
+
+
+if __name__ == '__main__':
+    loggus.AddHook(TimedRotatingFileHook("TimedRotatingFileHook.log", when="s", interval=5, backupCount=1))
+    for index in range(100):
+        time.sleep(0.5)
+        loggus.info(index)
 ```

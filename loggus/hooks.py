@@ -41,6 +41,13 @@ class IHook:
         raise NotImplementedError
 
     def Fire(self, entry, level, msg, output) -> None:
+        """
+        :param entry: loggus.entry instance
+        :param level: log level
+        :param msg: log msg, like `loggus.info("msgBody")`, so `msg` is "msgBody".
+        :param output: log line.
+        :return:
+        """
         raise NotImplementedError
 
 
