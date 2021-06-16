@@ -201,6 +201,10 @@ class Logger:
         entry = self.NewEntry()
         return entry.withFields(fields)
 
+    def withKwargs(self, **kwargs: dict):
+        entry = self.NewEntry()
+        return entry.withFields(kwargs)
+
     def withVariables(self, *args):
         entry = self.NewEntry()
         return entry.withVariables(*args)
@@ -302,6 +306,9 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
+    def withKwargs(self, **kwargs: dict):
+        return self.withFields(kwargs)
+
     def withVariables(self, *args):
         if not args:
             return self
@@ -384,6 +391,10 @@ def withField(key, value, color: str = None) -> Entry:
 
 def withFields(fields: dict) -> Entry:
     return NewEntry().withFields(fields)
+
+
+def withKwargs(**kwargs: dict) -> Entry:
+    return NewEntry().withFields(kwargs)
 
 
 def withVariables(*args) -> Entry:
