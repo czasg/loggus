@@ -201,7 +201,7 @@ class Logger:
         entry = self.NewEntry()
         return entry.withFields(fields)
 
-    def withKwargs(self, **kwargs: dict):
+    def withKwargs(self, **kwargs):
         entry = self.NewEntry()
         return entry.withFields(kwargs)
 
@@ -240,6 +240,10 @@ class Logger:
     def panic(self, *args):
         entry = self.NewEntry()
         entry.panic(*args)
+
+    def cover(self, molecular, denominator=100) -> None:
+        entry = self.NewEntry()
+        entry.cover(molecular, denominator)
 
 
 def NewLogger():
@@ -306,7 +310,7 @@ class Entry:
         entry.fields.update(fields)
         return entry
 
-    def withKwargs(self, **kwargs: dict):
+    def withKwargs(self, **kwargs):
         return self.withFields(kwargs)
 
     def withVariables(self, *args):
@@ -373,6 +377,21 @@ class Entry:
     def panic(self, *args):
         self.Log(PANIC, " ".join([f"{arg}" for arg in args]))
 
+    def cover(self, molecular, denominator=100):
+        entry = NewEntry(self.logger, self.fields)
+        if entry.logger.needFrame:
+            entry.frameFilePath, entry.frameLineNo, entry.frameFuncName, = FindCaller()
+
+        ratio = molecular / denominator
+        dynamic_ratio = int(ratio * 50)
+        dynamic = '=' * dynamic_ratio + '>' + ' ' * (50 - dynamic_ratio)
+        percentage = int(ratio * 100)
+        msg = "[{}] {}/{} {}%".format(dynamic, molecular, denominator, percentage)
+        output = entry.logger.formatter.Format(entry, RATE, msg)
+        entry.logger.Write(f"\r{output.strip()}")
+        if molecular == denominator:
+            entry.logger.Write("\r\n")
+
 
 def NewEntry(logger: Logger = _logger, fields=None):
     entry = Entry(logger)
@@ -393,7 +412,7 @@ def withFields(fields: dict) -> Entry:
     return NewEntry().withFields(fields)
 
 
-def withKwargs(**kwargs: dict) -> Entry:
+def withKwargs(**kwargs) -> Entry:
     return NewEntry().withFields(kwargs)
 
 
@@ -450,3 +469,8 @@ def error(*args) -> None:
 def panic(*args) -> None:
     entry = NewEntry()
     entry.panic(*args)
+
+
+def cover(molecular, denominator=100) -> None:
+    entry = NewEntry()
+    entry.cover(molecular, denominator)
