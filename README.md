@@ -1,4 +1,5 @@
 # loggus
+![Project status](https://img.shields.io/badge/version-0.0.24-green.svg)
 
 This is a structured log like `logrus`.
 
