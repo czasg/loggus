@@ -1,15 +1,4 @@
 # coding: utf-8
-import logging
-
-
-def IsLevel(level):
-    return level in GetAllLevels()
-
-
-def GetAllLevels():
-    return [DEBUG, INFO, WARNING, ERROR, PANIC]
-
-
 class Level:
 
     def __init__(self, string: str, integer: int, color: str):
@@ -45,9 +34,10 @@ class Level:
     __repr__ = __str__
 
 
-DEBUG = Level("debug", logging.DEBUG, "\033[1;37m{}\033[0m")
-INFO = Level("info", logging.INFO, "\033[1;32m{}\033[0m")
-WARNING = Level("warning", logging.WARNING, "\033[1;33m{}\033[0m")
-ERROR = Level("error", logging.ERROR, "\033[1;31m{}\033[0m")
-PANIC = Level("panic", logging.FATAL, "\033[1;36m{}\033[0m")
-RATE = Level("rate", logging.CRITICAL, "\033[1;32m{}\033[0m")
+DEBUG = Level("debug", 10, "\033[1;37m{}\033[0m")
+INFO = Level("info", 20, "\033[1;32m{}\033[0m")
+WARNING = Level("warning", 30, "\033[1;33m{}\033[0m")
+ERROR = Level("error", 40, "\033[1;31m{}\033[0m")
+PANIC = Level("panic", 50, "\033[1;36m{}\033[0m")
+GetAllLevels = lambda: [DEBUG, INFO, WARNING, ERROR, PANIC]
+IsLevel = lambda level: level in GetAllLevels()

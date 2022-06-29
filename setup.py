@@ -36,12 +36,12 @@ def find_version(*file_paths):
 
 setup(
     name='loggus',
-    version=find_version('loggus', 'pci.py'),
-    description="This is a log library, you can output json and care fields easy.",
-    long_description="see https://github.com/CzaOrz/loggus",
-    author='CzaOrz',
+    version=find_version('loggus', '__init__.py'),
+    description="基于 python 的结构化日志库。利用 python 动态语言的特性，实现了一些独特功能。",
+    long_description="see https://github.com/czasg/loggus",
+    author='czasg',
     author_email='972542644@qq.com',
-    url='https://github.com/CzaOrz/loggus',
+    url='https://github.com/czasg/loggus',
     packages=find_packages(),
     install_requires=[
         "colorama",
