@@ -1,5 +1,5 @@
 # loggus
-![Project status](https://img.shields.io/badge/version-0.1.1-green.svg)
+[![PyPI version](https://badge.fury.io/py/loggus.svg)](https://badge.fury.io/py/loggus)
 
 基于 python 的结构化日志库。利用 python 动态语言的特性，实现了一些独特功能。
 
