@@ -1,7 +1,8 @@
 # loggus
 [![PyPI version](https://badge.fury.io/py/loggus.svg)](https://badge.fury.io/py/loggus)
 
-基于 python 的结构化日志库。利用 python 动态语言的特性，实现了一些独特功能。
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+loggus 是一个基于 Python 的结构化日志库。与原生的 logging 相比，loggus 提炼了部分关键的结构化字段， 同时简化了结构化日志的使用方式，并改进了日志对象回收机制以确保更优的性能。 此外，loggus 还充分利用了 Python 动态语言的特性，实现了一系列独特的功能。
 
 ## 快速开始
 ```python
