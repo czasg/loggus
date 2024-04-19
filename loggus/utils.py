@@ -21,7 +21,7 @@ class Mark(dict):
         self[field] = f"{time.time() - start:.2f}"
 
 
-def process(cur: int, total=100, progress="#", progress_length=50, description=""):
+def process(cur: int, total=100, progress="█", progress_length=50, description=""):
     """
     >>> total = 200
     >>> for i in range(total+1):
