@@ -7,8 +7,9 @@ from loggus.hooks import *
 from loggus.fields import *
 from loggus.formatter import *
 from loggus.frame import *
+from loggus.utils import *
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __index_page__ = "https://github.com/czasg/loggus"
 __doc_page__ = "https://github.com/czasg/loggus/README.md"
 __author__ = "https://czasg.github.io/docusaurus/author/intro"
