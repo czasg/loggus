@@ -210,3 +210,10 @@ def NewEntry(logger=_logger, fields=None):
             fields = {f"{key}": f"{value}" for key, value in fields.items()}
         entry.fields = fields
     return entry
+
+
+def pprint(data):
+    if isinstance(data, (list, dict)):
+        print(json.dumps(data, ensure_ascii=False, indent=2))
+    else:
+        print(data)
